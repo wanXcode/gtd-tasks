@@ -6,7 +6,7 @@ echo "哥哥～晚上8点半了 🌙
 先给你看当前的任务清单：
 
 === 今日待办 ==="
-cat /root/.openclaw/workspace/gtd-tasks/today.md 2>/dev/null | grep -E '^\- \[.\]' | head -20
+cat /root/.openclaw/workspace/gtd-tasks/today.md 2>/dev/null | grep -E '^[·•]' | head -20
 
 echo "
 === Q1 紧急重要 ==="
