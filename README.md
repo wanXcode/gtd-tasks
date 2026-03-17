@@ -35,26 +35,31 @@ openclaw cron add --name "gtd-daily-checkin" \
 ## 📁 目录结构
 
 ```
-├── inbox.md          # 收集箱（新事项入口）
-├── today.md          # 今日待办（每日生成）
-├── matrix/           # 四象限分类
-│   ├── q1-urgent-important.md      # 紧急重要（立即做）
-│   ├── q2-important-not-urgent.md  # 重要不紧急（计划做）
-│   ├── q3-urgent-not-important.md  # 紧急不重要（委托做）
-│   └── q4-not-urgent-not-important.md # 不紧急不重要（少做）
-├── projects/         # 按项目分类
+├── data/
+│   ├── tasks.json    # v0.2.1 主库（唯一事实源）
+│   └── README.md     # 数据层说明
+├── scripts/
+│   ├── render_views.py   # 生成 today/inbox/matrix 视图
+│   ├── task_cli.py       # 任务增删改查
+│   └── migrate_legacy.py # 迁移占位脚本
+├── inbox.md          # 收集箱/总览（由主库生成）
+├── today.md          # 今日待办（由主库生成）
+├── matrix/           # 四象限视图（由主库生成）
+│   ├── q1-urgent-important.md
+│   ├── q2-important-not-urgent.md
+│   ├── q3-urgent-not-important.md
+│   └── q4-not-urgent-not-important.md
 ├── archive/          # 已完成归档
-├── weekly/           # 周回顾记录
 └── deploy.sh         # 一键部署脚本
 ```
 
 ## 🔄 使用流程
 
-1. **收集** → 随时告诉 AI 助理，记入 inbox.md
-2. **处理** → 每天梳理，分配到四象限
-3. **组织** → 生成今日待办，按优先级排序
-4. **回顾** → 每晚8:30自动提醒检查完成情况
-5. **执行** → 专注做事，标记完成
+1. **收集/更新** → 随时告诉 AI 助理，或通过 `task_cli.py` 更新主库
+2. **主库存储** → 所有任务统一写入 `data/tasks.json`
+3. **渲染视图** → 通过 `render_views.py` 生成 `today.md / inbox.md / matrix/*`
+4. **提醒** → 每晚 8:30 定时脚本读取 `today.md`
+5. **执行/完成** → 标记完成后自动从待办视图移除，进入已处理
 
 ## 📋 四象限说明
 
