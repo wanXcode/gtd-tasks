@@ -18,7 +18,7 @@ on run argv
 				set AppleScript's text item delimiters to tab
 				set parts to text items of rowText
 				set AppleScript's text item delimiters to ""
-				if (count of parts) ≥ 5 then
+				if (count of parts) is greater than or equal to 5 then
 					set gtdId to item 1 of parts
 					set listName to item 2 of parts
 					set reminderTitle to item 3 of parts
