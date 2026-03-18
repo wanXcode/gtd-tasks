@@ -1,16 +1,14 @@
 {
   "version": "0.3.1",
   "timezone": "Asia/Shanghai",
-  "generated_at": "2026-03-19T06:11:28.157251+08:00",
+  "generated_at": "2026-03-19T06:52:22.913568+08:00",
   "source": {
     "tasks_file": "data/tasks.json",
     "mapping_file": "config/apple_reminders_mapping.json",
     "business_date": "2026-03-19",
-    "source_updated_at": "2026-03-19T06:05:01+08:00",
-    "requested_task_ids": [
-      "tsk_20260319_005"
-    ],
-    "changed_only": false
+    "source_updated_at": "2026-03-19T06:46:44+08:00",
+    "requested_task_ids": [],
+    "changed_only": true
   },
   "lists": [
     {
@@ -46,15 +44,34 @@
   ],
   "tasks": [
     {
-      "gtd_id": "tsk_20260319_005",
-      "title": "最终自动同步测试 01",
+      "gtd_id": "tsk_20260319_010",
+      "title": "稳定化验证任务 C",
       "note": "",
       "status": "open",
       "bucket": "future",
       "quadrant": "q2",
       "category": null,
       "tags": [],
-      "updated_at": "2026-03-19T06:05:01+08:00",
+      "updated_at": "2026-03-19T06:46:44+08:00",
+      "sync_version": 1,
+      "target_list": "可能的事@Maybe",
+      "target_list_id": "maybe",
+      "target_list_status": "active",
+      "matched_rule_id": "bucket_future_to_maybe",
+      "matched_rule_name": "future 默认归入可能的事",
+      "due_date": null,
+      "reminder_notes": ""
+    },
+    {
+      "gtd_id": "tsk_20260319_011",
+      "title": "稳定化验证任务 D",
+      "note": "",
+      "status": "open",
+      "bucket": "future",
+      "quadrant": "q2",
+      "category": null,
+      "tags": [],
+      "updated_at": "2026-03-19T06:46:44+08:00",
       "sync_version": 1,
       "target_list": "可能的事@Maybe",
       "target_list_id": "maybe",
@@ -66,8 +83,8 @@
     }
   ],
   "summary": {
-    "exported_open_tasks": 1,
-    "total_source_tasks": 22,
-    "selected_source_tasks": 1
+    "exported_open_tasks": 2,
+    "total_source_tasks": 28,
+    "selected_source_tasks": 10
   }
 }
