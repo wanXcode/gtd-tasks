@@ -17,42 +17,53 @@ on run argv
 		repeat with rowText in rows
 			if rowText is not "" then
 				set parts to my splitByTab(rowText as text)
-				if (count of parts) ≥ 6 then
+				if (count of parts) ≥ 7 then
 					set gtdId to item 1 of parts
 					set listName to item 2 of parts
 					set reminderTitle to item 3 of parts
 					set reminderBody to my replaceText(" ", linefeed, item 4 of parts)
 					set dueDateText to item 5 of parts
 					set existingListName to item 6 of parts
+					set syncAction to item 7 of parts
 
-					set targetListRef to my ensureListByName(listName)
 					set foundData to my findReminderAnywhere(gtdId, reminderTitle)
 					set reminderRef to item 1 of foundData
 					set foundListName to item 2 of foundData
 
-					if reminderRef is missing value then
-						set reminderRef to make new reminder with properties {name:reminderTitle, body:reminderBody} at end of reminders of targetListRef
-						set createdCount to createdCount + 1
-					else
-						if foundListName is not listName then
-							set movedReminder to make new reminder at end of reminders of targetListRef with properties {name:(name of reminderRef), body:(body of reminderRef)}
+					if syncAction is "complete" then
+						if reminderRef is not missing value then
 							try
-								set completed of movedReminder to completed of reminderRef
+								set completed of reminderRef to true
 							end try
-							try
-								set due date of movedReminder to due date of reminderRef
-							end try
-							delete reminderRef
-							set reminderRef to movedReminder
-							set movedCount to movedCount + 1
+							set updatedCount to updatedCount + 1
 						end if
-						set name of reminderRef to reminderTitle
-						set body of reminderRef to reminderBody
-						set updatedCount to updatedCount + 1
-					end if
+					else
+						set targetListRef to my ensureListByName(listName)
 
-					if my applyDueDate(reminderRef, dueDateText) then
-						set dueAppliedCount to dueAppliedCount + 1
+						if reminderRef is missing value then
+							set reminderRef to make new reminder with properties {name:reminderTitle, body:reminderBody} at end of reminders of targetListRef
+							set createdCount to createdCount + 1
+						else
+							if foundListName is not listName then
+								set movedReminder to make new reminder at end of reminders of targetListRef with properties {name:(name of reminderRef), body:(body of reminderRef)}
+								try
+									set completed of movedReminder to completed of reminderRef
+								end try
+								try
+									set due date of movedReminder to due date of reminderRef
+								end try
+								delete reminderRef
+								set reminderRef to movedReminder
+								set movedCount to movedCount + 1
+							end if
+							set name of reminderRef to reminderTitle
+							set body of reminderRef to reminderBody
+							set updatedCount to updatedCount + 1
+						end if
+
+						if my applyDueDate(reminderRef, dueDateText) then
+							set dueAppliedCount to dueAppliedCount + 1
+						end if
 					end if
 				end if
 			end if
@@ -62,7 +73,7 @@ on run argv
 end run
 
 on loadRows(jsonPath)
-	set pythonCmd to "/usr/bin/python3 - <<'PY' " & quoted form of jsonPath & "\nimport json, sys\npath = sys.argv[1]\nwith open(path, 'r', encoding='utf-8') as f:\n    data = json.load(f)\nfor t in data.get('tasks', []):\n    title = (t.get('title') or '').replace('\\n', ' ').strip()\n    notes = (t.get('reminder_notes') or '').replace('\\r\\n', '\\n')\n    list_name = (t.get('target_list') or 'Inbox').strip()\n    gtd_id = t.get('gtd_id') or ''\n    due_date = (t.get('due_date') or '').strip()\n    existing_list_name = (t.get('existing_list_name') or '').strip()\n    print(gtd_id + '\\t' + list_name + '\\t' + title + '\\t' + notes.replace('\\n', '\\u2028') + '\\t' + due_date + '\\t' + existing_list_name)\nPY"
+	set pythonCmd to "/usr/bin/python3 - <<'PY' " & quoted form of jsonPath & "\nimport json, sys\npath = sys.argv[1]\nwith open(path, 'r', encoding='utf-8') as f:\n    data = json.load(f)\nfor t in data.get('tasks', []):\n    title = (t.get('title') or '').replace('\\n', ' ').strip()\n    notes = (t.get('reminder_notes') or '').replace('\\r\\n', '\\n')\n    list_name = (t.get('target_list') or 'Inbox').strip()\n    gtd_id = t.get('gtd_id') or ''\n    due_date = (t.get('due_date') or '').strip()\n    existing_list_name = (t.get('existing_list_name') or '').strip()\n    sync_action = (t.get('sync_action') or 'upsert').strip()\n    print(gtd_id + '\\t' + list_name + '\\t' + title + '\\t' + notes.replace('\\n', '\\u2028') + '\\t' + due_date + '\\t' + existing_list_name + '\\t' + sync_action)\nPY"
 	return paragraphs of (do shell script pythonCmd)
 end loadRows
 

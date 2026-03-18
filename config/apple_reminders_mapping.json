@@ -146,6 +146,7 @@
   "export": {
     "output_path": "sync/apple-reminders-export.json",
     "include_debug_fields": false,
+    "completion_statuses": ["done", "cancelled", "archived", "deleted"],
     "note_template": [
       "{{note}}"
     ]

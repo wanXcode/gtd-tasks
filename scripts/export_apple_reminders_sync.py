@@ -150,30 +150,62 @@ def export_payload(tasks_doc: Dict[str, Any], mapping: Dict[str, Any], selected_
     business_date = tasks_doc.get('meta', {}).get('business_date')
     source_tasks = selected_tasks if selected_tasks is not None else list(tasks_doc.get('tasks', []))
     output_tasks = []
+    completion_statuses = set(mapping.get('export', {}).get('completion_statuses', ['done', 'cancelled', 'archived', 'deleted']))
 
     for task in source_tasks:
-        if task.get('status') != 'open':
+        task_status = task.get('status')
+        if task_status == 'open':
+            target_list, matched_rule = resolve_target_list(task, mapping, lists_by_id)
+            output_tasks.append({
+                'gtd_id': task.get('id'),
+                'title': task.get('title'),
+                'note': task.get('note', ''),
+                'status': task_status,
+                'bucket': task.get('bucket'),
+                'quadrant': task.get('quadrant'),
+                'category': task.get('category'),
+                'tags': task.get('tags', []),
+                'updated_at': task.get('updated_at'),
+                'sync_version': task.get('sync_version'),
+                'sync_action': 'upsert',
+                'completed': False,
+                'completed_at': task.get('completed_at'),
+                'deleted_at': task.get('deleted_at'),
+                'target_list': target_list.get('name'),
+                'target_list_id': target_list.get('id'),
+                'target_list_status': target_list.get('status', 'active'),
+                'matched_rule_id': matched_rule.get('id') if matched_rule else None,
+                'matched_rule_name': matched_rule.get('name') if matched_rule else None,
+                'due_date': derive_due_date(task, business_date),
+                'reminder_notes': render_template(template_lines, task),
+            })
             continue
-        target_list, matched_rule = resolve_target_list(task, mapping, lists_by_id)
-        output_tasks.append({
-            'gtd_id': task.get('id'),
-            'title': task.get('title'),
-            'note': task.get('note', ''),
-            'status': task.get('status'),
-            'bucket': task.get('bucket'),
-            'quadrant': task.get('quadrant'),
-            'category': task.get('category'),
-            'tags': task.get('tags', []),
-            'updated_at': task.get('updated_at'),
-            'sync_version': task.get('sync_version'),
-            'target_list': target_list.get('name'),
-            'target_list_id': target_list.get('id'),
-            'target_list_status': target_list.get('status', 'active'),
-            'matched_rule_id': matched_rule.get('id') if matched_rule else None,
-            'matched_rule_name': matched_rule.get('name') if matched_rule else None,
-            'due_date': derive_due_date(task, business_date),
-            'reminder_notes': render_template(template_lines, task),
-        })
+
+        if task_status in completion_statuses:
+            output_tasks.append({
+                'gtd_id': task.get('id'),
+                'title': task.get('title'),
+                'note': task.get('note', ''),
+                'status': task_status,
+                'bucket': task.get('bucket'),
+                'quadrant': task.get('quadrant'),
+                'category': task.get('category'),
+                'tags': task.get('tags', []),
+                'updated_at': task.get('updated_at'),
+                'sync_version': task.get('sync_version'),
+                'sync_action': 'complete',
+                'completed': True,
+                'completed_at': task.get('completed_at') or task.get('updated_at'),
+                'deleted_at': task.get('deleted_at'),
+                'completion_reason': task_status,
+                'target_list': None,
+                'target_list_id': None,
+                'target_list_status': None,
+                'matched_rule_id': None,
+                'matched_rule_name': None,
+                'due_date': None,
+                'reminder_notes': render_template(template_lines, task),
+            })
 
     generated_at = datetime.now(SHANGHAI_TZ).isoformat()
     return {

@@ -302,6 +302,7 @@ python3 scripts/git_sync_export.py --commit --push --pretty
 
 - 同步状态：`sync/apple-reminders-sync-state.json`
 - 导出文件：`sync/apple-reminders-export.json`
+- 导出语义：open 任务输出 `sync_action=upsert`；显式完成类状态（`done/cancelled/archived/deleted`）输出 `sync_action=complete`，Mac 端仅在收到该显式事件时把 Reminder 标记为 completed，不会因本轮 export 缺席而推断完成
 - 日志文件：`logs/apple-reminders-sync.log`
 - Mac 自动执行说明：`mac/README.md`
 - Mac 包装脚本：`mac/run_apple_reminders_sync.sh`
