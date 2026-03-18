@@ -1,12 +1,12 @@
 {
   "version": "0.3.1",
   "timezone": "Asia/Shanghai",
-  "generated_at": "2026-03-19T03:38:45.310003+08:00",
+  "generated_at": "2026-03-19T03:48:33.184174+08:00",
   "source": {
     "tasks_file": "data/tasks.json",
     "mapping_file": "config/apple_reminders_mapping.json",
-    "business_date": "2026-03-18",
-    "source_updated_at": "2026-03-18T00:09:26+08:00"
+    "business_date": "2026-03-19",
+    "source_updated_at": "2026-03-19T03:48:33+08:00"
   },
   "lists": [
     {
@@ -48,15 +48,15 @@
       "status": "open",
       "bucket": "today",
       "quadrant": "q1",
-      "category": null,
+      "category": "waiting_for",
       "tags": [],
       "updated_at": "2026-03-17T00:00:00+08:00",
       "target_list": "等待@Waiting For",
       "target_list_id": "waiting_for",
       "target_list_status": "active",
-      "matched_rule_id": "keyword_waiting_for",
-      "matched_rule_name": "标题或备注出现等待/确认/回复类词语时归入等待",
-      "due_date": "2026-03-18",
+      "matched_rule_id": "category_waiting_for",
+      "matched_rule_name": "任务已显式标记 waiting_for",
+      "due_date": "2026-03-19",
       "reminder_notes": "[GTD_ID] tsk_20260317_001"
     },
     {
@@ -66,15 +66,15 @@
       "status": "open",
       "bucket": "today",
       "quadrant": "q1",
-      "category": null,
+      "category": "waiting_for",
       "tags": [],
       "updated_at": "2026-03-17T00:00:00+08:00",
       "target_list": "等待@Waiting For",
       "target_list_id": "waiting_for",
       "target_list_status": "active",
-      "matched_rule_id": "keyword_waiting_for",
-      "matched_rule_name": "标题或备注出现等待/确认/回复类词语时归入等待",
-      "due_date": "2026-03-18",
+      "matched_rule_id": "category_waiting_for",
+      "matched_rule_name": "任务已显式标记 waiting_for",
+      "due_date": "2026-03-19",
       "reminder_notes": "[GTD_ID] tsk_20260317_002"
     },
     {
@@ -84,15 +84,15 @@
       "status": "open",
       "bucket": "today",
       "quadrant": "q2",
-      "category": null,
+      "category": "waiting_for",
       "tags": [],
       "updated_at": "2026-03-17T00:00:00+08:00",
       "target_list": "等待@Waiting For",
       "target_list_id": "waiting_for",
       "target_list_status": "active",
-      "matched_rule_id": "keyword_waiting_for",
-      "matched_rule_name": "标题或备注出现等待/确认/回复类词语时归入等待",
-      "due_date": "2026-03-18",
+      "matched_rule_id": "category_waiting_for",
+      "matched_rule_name": "任务已显式标记 waiting_for",
+      "due_date": "2026-03-19",
       "reminder_notes": "[GTD_ID] tsk_20260317_003"
     },
     {
@@ -102,15 +102,15 @@
       "status": "open",
       "bucket": "tomorrow",
       "quadrant": "q1",
-      "category": null,
+      "category": "waiting_for",
       "tags": [],
       "updated_at": "2026-03-17T00:00:00+08:00",
       "target_list": "等待@Waiting For",
       "target_list_id": "waiting_for",
       "target_list_status": "active",
-      "matched_rule_id": "keyword_waiting_for",
-      "matched_rule_name": "标题或备注出现等待/确认/回复类词语时归入等待",
-      "due_date": "2026-03-19",
+      "matched_rule_id": "category_waiting_for",
+      "matched_rule_name": "任务已显式标记 waiting_for",
+      "due_date": "2026-03-20",
       "reminder_notes": "[GTD_ID] tsk_20260317_004"
     },
     {
@@ -120,15 +120,15 @@
       "status": "open",
       "bucket": "tomorrow",
       "quadrant": "q1",
-      "category": null,
+      "category": "waiting_for",
       "tags": [],
       "updated_at": "2026-03-17T00:00:00+08:00",
       "target_list": "等待@Waiting For",
       "target_list_id": "waiting_for",
       "target_list_status": "active",
-      "matched_rule_id": "keyword_waiting_for",
-      "matched_rule_name": "标题或备注出现等待/确认/回复类词语时归入等待",
-      "due_date": "2026-03-19",
+      "matched_rule_id": "category_waiting_for",
+      "matched_rule_name": "任务已显式标记 waiting_for",
+      "due_date": "2026-03-20",
       "reminder_notes": "[GTD_ID] tsk_20260317_005"
     },
     {
@@ -138,15 +138,15 @@
       "status": "open",
       "bucket": "tomorrow",
       "quadrant": "q1",
-      "category": null,
+      "category": "project",
       "tags": [],
       "updated_at": "2026-03-17T00:00:00+08:00",
-      "target_list": "收集箱@inbox",
-      "target_list_id": "index",
+      "target_list": "项目@project",
+      "target_list_id": "project",
       "target_list_status": "active",
-      "matched_rule_id": "fallback_open_tasks",
-      "matched_rule_name": "默认兜底：所有 open 任务进入收集箱",
-      "due_date": "2026-03-19",
+      "matched_rule_id": "category_project",
+      "matched_rule_name": "任务已显式标记 project",
+      "due_date": "2026-03-20",
       "reminder_notes": "[GTD_ID] tsk_20260317_006\n已出初步方案，下周实施"
     },
     {
@@ -156,14 +156,14 @@
       "status": "open",
       "bucket": "future",
       "quadrant": "q2",
-      "category": null,
+      "category": "maybe",
       "tags": [],
       "updated_at": "2026-03-17T00:00:00+08:00",
       "target_list": "可能的事@Maybe",
       "target_list_id": "maybe",
       "target_list_status": "active",
-      "matched_rule_id": "bucket_future_to_maybe",
-      "matched_rule_name": "future 默认归入可能的事",
+      "matched_rule_id": "category_maybe",
+      "matched_rule_name": "任务已显式标记 maybe",
       "due_date": null,
       "reminder_notes": "[GTD_ID] tsk_20260317_007\n为工作室准备"
     },
@@ -174,7 +174,7 @@
       "status": "open",
       "bucket": "future",
       "quadrant": "q2",
-      "category": null,
+      "category": "waiting_for",
       "tags": [
         "ME"
       ],
@@ -182,8 +182,8 @@
       "target_list": "等待@Waiting For",
       "target_list_id": "waiting_for",
       "target_list_status": "active",
-      "matched_rule_id": "keyword_waiting_for",
-      "matched_rule_name": "标题或备注出现等待/确认/回复类词语时归入等待",
+      "matched_rule_id": "category_waiting_for",
+      "matched_rule_name": "任务已显式标记 waiting_for",
       "due_date": null,
       "reminder_notes": "[GTD_ID] tsk_20260317_008"
     },
@@ -194,7 +194,7 @@
       "status": "open",
       "bucket": "future",
       "quadrant": "q2",
-      "category": null,
+      "category": "maybe",
       "tags": [
         "ME"
       ],
@@ -202,8 +202,8 @@
       "target_list": "可能的事@Maybe",
       "target_list_id": "maybe",
       "target_list_status": "active",
-      "matched_rule_id": "bucket_future_to_maybe",
-      "matched_rule_name": "future 默认归入可能的事",
+      "matched_rule_id": "category_maybe",
+      "matched_rule_name": "任务已显式标记 maybe",
       "due_date": null,
       "reminder_notes": "[GTD_ID] tsk_20260317_009"
     },
@@ -214,7 +214,7 @@
       "status": "open",
       "bucket": "future",
       "quadrant": "q2",
-      "category": null,
+      "category": "maybe",
       "tags": [
         "ME"
       ],
@@ -222,8 +222,8 @@
       "target_list": "可能的事@Maybe",
       "target_list_id": "maybe",
       "target_list_status": "active",
-      "matched_rule_id": "bucket_future_to_maybe",
-      "matched_rule_name": "future 默认归入可能的事",
+      "matched_rule_id": "category_maybe",
+      "matched_rule_name": "任务已显式标记 maybe",
       "due_date": null,
       "reminder_notes": "[GTD_ID] tsk_20260317_010"
     },
@@ -234,7 +234,7 @@
       "status": "open",
       "bucket": "future",
       "quadrant": "q2",
-      "category": null,
+      "category": "maybe",
       "tags": [
         "ME"
       ],
@@ -242,8 +242,8 @@
       "target_list": "可能的事@Maybe",
       "target_list_id": "maybe",
       "target_list_status": "active",
-      "matched_rule_id": "bucket_future_to_maybe",
-      "matched_rule_name": "future 默认归入可能的事",
+      "matched_rule_id": "category_maybe",
+      "matched_rule_name": "任务已显式标记 maybe",
       "due_date": null,
       "reminder_notes": "[GTD_ID] tsk_20260318_001\n补 release 文档"
     }

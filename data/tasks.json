@@ -2,8 +2,8 @@
   "version": "0.2.1",
   "meta": {
     "timezone": "Asia/Shanghai",
-    "business_date": "2026-03-18",
-    "updated_at": "2026-03-18T00:09:26+08:00"
+    "business_date": "2026-03-19",
+    "updated_at": "2026-03-19T03:48:33+08:00"
   },
   "tasks": [
     {
@@ -21,7 +21,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "waiting_for"
     },
     {
       "id": "tsk_20260317_002",
@@ -38,7 +39,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "waiting_for"
     },
     {
       "id": "tsk_20260317_003",
@@ -55,7 +57,8 @@
       "last_synced_at": null,
       "created_at": "2026-03-17T00:00:00+08:00",
       "updated_at": "2026-03-17T00:00:00+08:00",
-      "completed_at": null
+      "completed_at": null,
+      "category": "waiting_for"
     },
     {
       "id": "tsk_20260317_004",
@@ -72,7 +75,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "waiting_for"
     },
     {
       "id": "tsk_20260317_005",
@@ -89,7 +93,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "waiting_for"
     },
     {
       "id": "tsk_20260317_006",
@@ -106,7 +111,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "project"
     },
     {
       "id": "tsk_20260317_007",
@@ -123,7 +129,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "maybe"
     },
     {
       "id": "tsk_20260317_008",
@@ -142,7 +149,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "waiting_for"
     },
     {
       "id": "tsk_20260317_009",
@@ -161,7 +169,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "maybe"
     },
     {
       "id": "tsk_20260317_010",
@@ -180,7 +189,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "maybe"
     },
     {
       "id": "tsk_20260317_011",
@@ -197,7 +207,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "project"
     },
     {
       "id": "tsk_20260317_012",
@@ -214,7 +225,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "project"
     },
     {
       "id": "tsk_20260317_013",
@@ -231,7 +243,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "index"
     },
     {
       "id": "tsk_20260317_014",
@@ -248,7 +261,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "project"
     },
     {
       "id": "tsk_20260317_015",
@@ -265,7 +279,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "project"
     },
     {
       "id": "tsk_20260317_016",
@@ -282,7 +297,8 @@
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "index"
     },
     {
       "id": "tsk_20260318_001",
@@ -301,7 +317,8 @@
       "source_task_id": null,
       "sync_version": 6,
       "deleted_at": null,
-      "last_synced_at": null
+      "last_synced_at": null,
+      "category": "maybe"
     }
   ]
 }
