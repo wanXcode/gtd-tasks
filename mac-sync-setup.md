@@ -62,9 +62,26 @@ osascript ~/workspace/gtd-tasks/sync_apple_reminders_mac.applescript ~/workspace
 
 ---
 
+## Mac 自动执行（新增）
+
+仓库现在已经补了一套可直接落地的 Mac 侧轮询方案：
+
+- 包装脚本：`mac/run_apple_reminders_sync.sh`
+- launchd 模板：`mac/com.xiaohua.gtd-apple-reminders-sync.plist`
+- 安装说明：`mac/README.md`
+- 一键安装脚本：`mac/install_launchd_sync.sh`
+
+推荐顺序：
+
+1. 先继续用原命令手动跑通
+2. 再用 `./mac/run_apple_reminders_sync.sh` 跑通包装脚本
+3. 最后按 `mac/README.md` 装 launchd
+
+这样回退最简单：停掉 launchd 后，仍然可以回到手动执行。
+
 ## 下一步增强建议
 
-1. 支持跨列表查找并迁移 Reminder
-2. 支持完成状态同步（GTD done → Reminders completed 或移除）
-3. 支持从 Reminders 勾选完成回写 GTD
-4. 支持定时自动执行
+1. 支持完成状态同步（GTD done → Reminders completed 或移除）
+2. 支持从 Reminders 勾选完成回写 GTD
+3. 视需要补“仅当导出文件变化时才 push”的更细粒度判定
+4. 视真实使用情况再考虑更复杂的联动，而不是过早做双向

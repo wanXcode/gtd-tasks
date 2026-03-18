@@ -2,11 +2,16 @@
 import argparse
 import json
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 ROOT = Path('/root/.openclaw/workspace/gtd-tasks')
+sys.path.insert(0, str(ROOT / 'scripts'))
+
+from apple_reminders_sync_lib import maybe_auto_push, setup_logger  # noqa: E402
+
 DATA = ROOT / 'data' / 'tasks.json'
 RENDER = ROOT / 'scripts' / 'render_views.py'
 TZ = ZoneInfo('Asia/Shanghai')
@@ -14,6 +19,7 @@ VALID_BUCKETS = ['today', 'tomorrow', 'future', 'archive']
 VALID_QUADRANTS = ['q1', 'q2', 'q3', 'q4']
 VALID_STATUSES = ['open', 'done', 'cancelled', 'archived']
 VALID_CATEGORIES = ['index', 'project', 'next_action', 'waiting_for', 'maybe']
+LOGGER = setup_logger('task_cli')
 
 
 def now_dt():
@@ -177,6 +183,16 @@ def format_task(task, verbose=False):
     )
 
 
+def auto_push_after_write(task_ids, source, sync=False):
+    if not sync:
+        return
+    try:
+        result = maybe_auto_push(source=source, task_ids=task_ids, logger=LOGGER)
+        LOGGER.info('auto push result: %s', result)
+    except Exception as exc:
+        LOGGER.warning('auto push failed: %s', exc)
+
+
 def cmd_add(args):
     data = load_data()
     task = normalize_task({
@@ -196,6 +212,7 @@ def cmd_add(args):
     data['tasks'].append(task)
     save_data(data)
     render()
+    auto_push_after_write([task['id']], 'task_cli.add', sync=args.sync_apple_reminders)
     print(f"added: {task['id']} {task['title']}")
 
 
@@ -223,6 +240,7 @@ def cmd_update(args):
     bump_task(task)
     save_data(data)
     render()
+    auto_push_after_write([task['id']], 'task_cli.update', sync=args.sync_apple_reminders)
     print(f"updated: {task['id']}")
 
 
@@ -233,6 +251,7 @@ def cmd_done(args):
     bump_task(task)
     save_data(data)
     render()
+    auto_push_after_write([task['id']], 'task_cli.done', sync=args.sync_apple_reminders)
     print(f"done: {task['id']}")
 
 
@@ -245,6 +264,7 @@ def cmd_reopen(args):
     bump_task(task)
     save_data(data)
     render()
+    auto_push_after_write([task['id']], 'task_cli.reopen', sync=args.sync_apple_reminders)
     print(f"reopened: {task['id']}")
 
 
@@ -272,6 +292,7 @@ def cmd_move(args):
         bump_task(task)
     save_data(data)
     render()
+    auto_push_after_write([task['id'] for task in tasks], 'task_cli.move', sync=args.sync_apple_reminders)
     print(f"moved: {len(tasks)} task(s) -> {args.to_bucket}")
 
 
@@ -292,7 +313,12 @@ def cmd_tag(args):
         bump_task(task)
     save_data(data)
     render()
+    auto_push_after_write([task['id'] for task in tasks], 'task_cli.tag', sync=args.sync_apple_reminders)
     print(f"tagged: {len(tasks)} task(s)")
+
+
+def add_sync_flag(parser):
+    parser.add_argument('--sync-apple-reminders', action='store_true', help='写入成功后尝试自动 push 到 Apple Reminders（默认关闭，也可用环境变量开启）')
 
 
 def build_parser():
@@ -306,6 +332,7 @@ def build_parser():
     p.add_argument('--note')
     p.add_argument('--tags', nargs='*')
     p.add_argument('--category', choices=VALID_CATEGORIES)
+    add_sync_flag(p)
     p.set_defaults(func=cmd_add)
 
     p = sub.add_parser('update')
@@ -319,15 +346,18 @@ def build_parser():
     p.add_argument('--set-tags', nargs='*')
     p.add_argument('--add-tags', nargs='*')
     p.add_argument('--remove-tags', nargs='*')
+    add_sync_flag(p)
     p.set_defaults(func=cmd_update)
 
     p = sub.add_parser('done')
     p.add_argument('id')
+    add_sync_flag(p)
     p.set_defaults(func=cmd_done)
 
     p = sub.add_parser('reopen')
     p.add_argument('id')
     p.add_argument('--bucket', choices=['today', 'tomorrow', 'future'])
+    add_sync_flag(p)
     p.set_defaults(func=cmd_reopen)
 
     p = sub.add_parser('list')
@@ -351,6 +381,7 @@ def build_parser():
     p.add_argument('--tag')
     p.add_argument('--text')
     p.add_argument('--to-bucket', required=True, choices=VALID_BUCKETS)
+    add_sync_flag(p)
     p.set_defaults(func=cmd_move)
 
     p = sub.add_parser('tag')
@@ -363,6 +394,7 @@ def build_parser():
     p.add_argument('--category', choices=VALID_CATEGORIES)
     p.add_argument('--tag')
     p.add_argument('--text')
+    add_sync_flag(p)
     p.set_defaults(func=cmd_tag)
 
     return parser

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.xiaohua.gtd-apple-reminders-sync</string>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>/ABSOLUTE/PATH/TO/gtd-tasks/mac/run_apple_reminders_sync.sh</string>
+      <string>/ABSOLUTE/PATH/TO/gtd-tasks/sync/apple-reminders-export.json</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/ABSOLUTE/PATH/TO/gtd-tasks</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StartInterval</key>
+    <integer>300</integer>
+
+    <key>StandardOutPath</key>
+    <string>/ABSOLUTE/PATH/TO/gtd-tasks/logs/apple-reminders-launchd.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/ABSOLUTE/PATH/TO/gtd-tasks/logs/apple-reminders-launchd.err.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>PATH</key>
+      <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+      <key>PYTHON_BIN</key>
+      <string>/usr/bin/python3</string>
+      <key>OSASCRIPT_BIN</key>
+      <string>/usr/bin/osascript</string>
+    </dict>
+  </dict>
+</plist>

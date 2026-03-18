@@ -1,0 +1,83 @@
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+DEFAULT_EXPORT_PATH="$REPO_ROOT/sync/apple-reminders-export.json"
+DEFAULT_APPLESCRIPT_PATH="$REPO_ROOT/sync_apple_reminders_mac.applescript"
+DEFAULT_LOG_DIR="$REPO_ROOT/logs"
+DEFAULT_STDOUT_LOG="$DEFAULT_LOG_DIR/apple-reminders-launchd.out.log"
+DEFAULT_STDERR_LOG="$DEFAULT_LOG_DIR/apple-reminders-launchd.err.log"
+
+EXPORT_PATH="${1:-${GTD_APPLE_REMINDERS_EXPORT_PATH:-$DEFAULT_EXPORT_PATH}}"
+APPLESCRIPT_PATH="${GTD_APPLE_REMINDERS_APPLESCRIPT_PATH:-$DEFAULT_APPLESCRIPT_PATH}"
+LOG_DIR="${GTD_APPLE_REMINDERS_LOG_DIR:-$DEFAULT_LOG_DIR}"
+RUN_LOG="$LOG_DIR/apple-reminders-sync-mac.log"
+LOCK_DIR="$LOG_DIR/.apple-reminders-sync.lock"
+PYTHON_BIN="${PYTHON_BIN:-/usr/bin/python3}"
+OSASCRIPT_BIN="${OSASCRIPT_BIN:-/usr/bin/osascript}"
+
+mkdir -p "$LOG_DIR"
+
+log() {
+  printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S%z')" "$*" | tee -a "$RUN_LOG"
+}
+
+cleanup() {
+  rmdir "$LOCK_DIR" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
+if ! mkdir "$LOCK_DIR" >/dev/null 2>&1; then
+  log "skip: another sync process is running"
+  exit 20
+fi
+
+if [[ ! -f "$EXPORT_PATH" ]]; then
+  log "error: export json not found: $EXPORT_PATH"
+  exit 10
+fi
+
+if [[ ! -f "$APPLESCRIPT_PATH" ]]; then
+  log "error: AppleScript not found: $APPLESCRIPT_PATH"
+  exit 11
+fi
+
+if [[ ! -x "$OSASCRIPT_BIN" ]]; then
+  log "error: osascript not executable: $OSASCRIPT_BIN"
+  exit 12
+fi
+
+if [[ ! -x "$PYTHON_BIN" ]]; then
+  log "error: python3 not executable: $PYTHON_BIN"
+  exit 13
+fi
+
+TASK_COUNT="$($PYTHON_BIN - <<'PY' "$EXPORT_PATH"
+import json, sys
+path = sys.argv[1]
+with open(path, 'r', encoding='utf-8') as f:
+    data = json.load(f)
+print(len(data.get('tasks', [])))
+PY
+)"
+
+log "start: export=$EXPORT_PATH tasks=$TASK_COUNT"
+set +e
+OUTPUT="$($OSASCRIPT_BIN "$APPLESCRIPT_PATH" "$EXPORT_PATH" 2>&1)"
+STATUS=$?
+set -e
+
+if [[ -n "$OUTPUT" ]]; then
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && log "osascript: $line"
+  done <<< "$OUTPUT"
+fi
+
+if [[ $STATUS -ne 0 ]]; then
+  log "failed: exit_code=$STATUS"
+  exit $STATUS
+fi
+
+log "done: exit_code=0"
+exit 0

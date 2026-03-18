@@ -3,17 +3,23 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 ROOT = Path('/root/.openclaw/workspace/gtd-tasks')
+sys.path.insert(0, str(ROOT / 'scripts'))
+
+from apple_reminders_sync_lib import maybe_auto_push, setup_logger  # noqa: E402
+
 DATA = ROOT / 'data' / 'tasks.json'
 TASK_CLI = ROOT / 'scripts' / 'task_cli.py'
 TZ = ZoneInfo('Asia/Shanghai')
 DEFAULT_BUCKET = 'future'
 DEFAULT_QUADRANT = 'q2'
 DEFAULT_CATEGORY = 'index'
+LOGGER = setup_logger('nlp_capture')
 BUCKET_KEYWORDS = [
     ('today', ['今天', '今日', '今晚', '今晚上', '今天内', '今天处理', '今天做']),
     ('tomorrow', ['明天', '明日', '明早', '明晚', '明天下午', '明天上午']),
@@ -192,7 +198,7 @@ def print_preview(obj):
     print(json.dumps(obj, ensure_ascii=False, indent=2))
 
 
-def apply_capture(preview):
+def apply_capture(preview, sync_apple_reminders=False):
     cmd = [
         'python3', str(TASK_CLI), 'add', preview['title'],
         '--bucket', preview['bucket'],
@@ -204,6 +210,8 @@ def apply_capture(preview):
         cmd += ['--category', preview['category']]
     if preview.get('tags'):
         cmd += ['--tags', *preview['tags']]
+    if sync_apple_reminders:
+        cmd += ['--sync-apple-reminders']
     completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
     return completed.stdout.strip()
 
@@ -214,6 +222,7 @@ def build_parser():
     parser.add_argument('--mode', choices=['preview', 'apply'], default='preview')
     parser.add_argument('--default-bucket', choices=['today', 'tomorrow', 'future'], default=DEFAULT_BUCKET)
     parser.add_argument('--default-quadrant', choices=['q1', 'q2', 'q3', 'q4'], default=DEFAULT_QUADRANT)
+    parser.add_argument('--sync-apple-reminders', action='store_true', help='apply 成功后尝试自动 push 到 Apple Reminders（默认关闭，也可用环境变量开启）')
     return parser
 
 
@@ -224,7 +233,8 @@ def main():
     preview['mode'] = args.mode
     print_preview(preview)
     if args.mode == 'apply':
-        result = apply_capture(preview)
+        result = apply_capture(preview, sync_apple_reminders=args.sync_apple_reminders)
+        LOGGER.info('nlp apply result: %s', result)
         print(result)
 
 
