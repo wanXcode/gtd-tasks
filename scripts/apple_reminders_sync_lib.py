@@ -20,12 +20,22 @@ DEFAULT_LOG_PATH = LOG_DIR / 'apple-reminders-sync.log'
 EXPORT_SCRIPT = ROOT / 'scripts' / 'export_apple_reminders_sync.py'
 MAC_SCRIPT = ROOT / 'sync_apple_reminders_mac.applescript'
 TZ = ZoneInfo('Asia/Shanghai')
+GIT_SYNC_ALLOWED_PATHS = [
+    Path('sync/apple-reminders-export.json'),
+    Path('sync/apple-reminders-sync-state.json'),
+]
 
 SYNC_ENV_FLAG = 'GTD_APPLE_REMINDERS_AUTO_PUSH'
 SYNC_ENV_MODE = 'GTD_APPLE_REMINDERS_SYNC_MODE'
 SYNC_ENV_SKIP = 'GTD_APPLE_REMINDERS_SKIP_PUSH'
 SYNC_ENV_DRY_RUN = 'GTD_APPLE_REMINDERS_DRY_RUN'
 SYNC_ENV_LOG_LEVEL = 'GTD_APPLE_REMINDERS_LOG_LEVEL'
+GIT_SYNC_ENABLED_ENV = 'GTD_APPLE_REMINDERS_GIT_SYNC_ENABLED'
+GIT_SYNC_COMMIT_ENV = 'GTD_APPLE_REMINDERS_GIT_COMMIT_ENABLED'
+GIT_SYNC_PUSH_ENV = 'GTD_APPLE_REMINDERS_GIT_PUSH_ENABLED'
+GIT_SYNC_DRY_RUN_ENV = 'GTD_APPLE_REMINDERS_GIT_DRY_RUN'
+GIT_SYNC_REMOTE_ENV = 'GTD_APPLE_REMINDERS_GIT_REMOTE'
+GIT_SYNC_BRANCH_ENV = 'GTD_APPLE_REMINDERS_GIT_BRANCH'
 
 
 class SyncError(RuntimeError):
@@ -374,15 +384,125 @@ def maybe_auto_push(source: str, task_ids: Optional[Iterable[str]] = None, chang
         return {'status': 'disabled', 'source': source}
 
     payload = export_sync_payload(task_ids=task_ids, changed_only=changed_only, logger=logger)
+    git_result = git_sync_export(logger=logger)
     try:
         push_result = push_sync_payload(logger=logger)
-        return {'status': push_result.get('status', 'success'), 'source': source, 'exported': len(payload.get('tasks', []))}
+        return {
+            'status': push_result.get('status', 'success'),
+            'source': source,
+            'exported': len(payload.get('tasks', [])),
+            'git_sync': git_result,
+        }
     except PushNotConfigured as exc:
         logger.warning('push skipped: %s', exc)
-        return {'status': 'push_skipped', 'source': source, 'reason': str(exc), 'exported': len(payload.get('tasks', []))}
+        return {
+            'status': 'push_skipped',
+            'source': source,
+            'reason': str(exc),
+            'exported': len(payload.get('tasks', [])),
+            'git_sync': git_result,
+        }
 
 
 def append_sync_log(message: str, logger: Optional[logging.Logger] = None, level: str = 'info') -> None:
     logger = logger or setup_logger()
     log_fn = getattr(logger, level, logger.info)
     log_fn(message)
+
+
+def run_git_command(args: List[str], logger: logging.Logger, check: bool = True) -> subprocess.CompletedProcess:
+    return run_subprocess(['git', '-C', str(ROOT), *args], logger=logger, check=check)
+
+
+def path_has_changes(path: Path, logger: logging.Logger) -> bool:
+    completed = run_git_command(['status', '--short', '--', str(path)], logger=logger, check=False)
+    return bool((completed.stdout or '').strip())
+
+
+def collect_changed_git_sync_paths(logger: logging.Logger) -> List[str]:
+    changed: List[str] = []
+    for rel_path in GIT_SYNC_ALLOWED_PATHS:
+        if path_has_changes(rel_path, logger):
+            changed.append(str(rel_path))
+    return changed
+
+
+def get_git_sync_branch(logger: logging.Logger) -> str:
+    branch = (os.getenv(GIT_SYNC_BRANCH_ENV) or '').strip()
+    if branch:
+        return branch
+    completed = run_git_command(['rev-parse', '--abbrev-ref', 'HEAD'], logger=logger, check=False)
+    current = (completed.stdout or '').strip()
+    if completed.returncode != 0 or not current or current == 'HEAD':
+        raise SyncError('git sync requires a checked-out branch or GTD_APPLE_REMINDERS_GIT_BRANCH')
+    return current
+
+
+def git_sync_export(logger: Optional[logging.Logger] = None, enable_commit: Optional[bool] = None, enable_push: Optional[bool] = None, dry_run: Optional[bool] = None) -> Dict[str, Any]:
+    logger = logger or setup_logger()
+    enabled = bool_from_env(GIT_SYNC_ENABLED_ENV, False)
+    enable_commit = enabled if enable_commit is None else enable_commit
+    enable_push = bool_from_env(GIT_SYNC_PUSH_ENV, False) if enable_push is None else enable_push
+    dry_run = bool_from_env(GIT_SYNC_DRY_RUN_ENV, False) if dry_run is None else dry_run
+
+    result: Dict[str, Any] = {
+        'status': 'disabled',
+        'enabled': bool(enable_commit),
+        'push_enabled': bool(enable_push),
+        'dry_run': bool(dry_run),
+        'allowed_paths': [str(p) for p in GIT_SYNC_ALLOWED_PATHS],
+        'staged_paths': [],
+    }
+
+    if enable_push:
+        enable_commit = True
+        result['enabled'] = True
+
+    if not enable_commit:
+        logger.info('git sync disabled')
+        return result
+
+    try:
+        changed_paths = collect_changed_git_sync_paths(logger)
+        result['changed_paths'] = changed_paths
+        if not changed_paths:
+            result['status'] = 'no_changes'
+            logger.info('git sync: no allowed path changes detected')
+            return result
+
+        branch = get_git_sync_branch(logger)
+        remote = (os.getenv(GIT_SYNC_REMOTE_ENV) or 'origin').strip() or 'origin'
+        result['branch'] = branch
+        result['remote'] = remote
+
+        commit_message = f'chore(sync): update apple reminders export {now_dt().strftime("%Y-%m-%d %H:%M:%S %z")}'
+        result['commit_message'] = commit_message
+
+        if dry_run:
+            result['status'] = 'dry_run'
+            result['staged_paths'] = changed_paths
+            logger.info('git sync dry-run: would stage paths=%s push=%s', changed_paths, enable_push)
+            return result
+
+        run_git_command(['add', '--', *changed_paths], logger=logger)
+        result['staged_paths'] = changed_paths
+
+        diff_cached = run_git_command(['diff', '--cached', '--quiet', '--', *changed_paths], logger=logger, check=False)
+        if diff_cached.returncode == 0:
+            result['status'] = 'no_staged_diff'
+            logger.info('git sync: no staged diff after add')
+            return result
+
+        run_git_command(['commit', '-m', commit_message], logger=logger)
+        result['status'] = 'committed'
+
+        if enable_push:
+            run_git_command(['push', remote, branch], logger=logger)
+            result['status'] = 'pushed'
+
+        return result
+    except Exception as exc:
+        logger.warning('git sync failed: %s', exc)
+        result['status'] = 'failed'
+        result['error'] = str(exc)
+        return result

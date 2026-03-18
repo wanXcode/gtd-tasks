@@ -203,6 +203,8 @@ python3 scripts/render_views.py
 - 当前只做 **GTD -> Apple Reminders 单向 push**
 - 不碰双向回写
 - 原有手动链路继续可用
+- **推荐架构改为：Linux 更新仓库，Mac 本地 `git pull` 后再执行 AppleScript**
+- **不再推荐 Linux 主动 SSH / rsync / scp 推送到 Mac**
 
 ### 统一入口
 
@@ -241,6 +243,60 @@ export GTD_APPLE_REMINDERS_AUTO_PUSH=1
 - 记录状态和日志
 - 把 push 标记为 skipped / failed
 - 不影响主库写入
+
+### Linux 侧 Git 自动提交（默认关闭）
+
+现在可以把 Apple Reminders 导出链路接到 Git，但仍然保持很保守：
+
+- 只允许提交这两个同步文件：
+  - `sync/apple-reminders-export.json`
+  - `sync/apple-reminders-sync-state.json`
+- **不会** 自动提交 `data/tasks.json`、`today.md`、`done.md`、`weekly/*` 等业务文件
+- commit / push 失败只记日志，不影响主流程
+
+推荐环境变量：
+
+```bash
+export GTD_APPLE_REMINDERS_GIT_SYNC_ENABLED=1
+export GTD_APPLE_REMINDERS_GIT_PUSH_ENABLED=1
+# 可选
+export GTD_APPLE_REMINDERS_GIT_REMOTE=origin
+export GTD_APPLE_REMINDERS_GIT_BRANCH=main
+```
+
+手动测试：
+
+```bash
+python3 scripts/sync_apple_reminders.py --mode export --git-sync --dry-run --pretty
+python3 scripts/git_sync_export.py --commit --dry-run --pretty
+python3 scripts/git_sync_export.py --commit --push --pretty
+```
+
+说明：
+
+- `--git-sync` / `--commit` 只做安全范围内的 `git add + commit`
+- `--git-push` / `--push` 才会继续 `git push`
+- dry-run 只报告将要提交哪些文件，不会改 Git 状态
+
+### Mac 主动拉取方案（推荐）
+
+推荐部署方式：
+
+1. Linux 端更新任务并生成 `sync/apple-reminders-export.json`
+2. Linux 端只把同步产物提交/推送到远端 Git
+3. Mac 本地 launchd 定时执行 `mac/run_apple_reminders_sync.sh`
+4. 包装脚本先尝试 `git fetch + git pull --ff-only`
+5. 成功后再消费本地最新 export，同步到 Apple Reminders
+
+当前 Mac 包装脚本带了几个保守保护：
+
+- `logs/` 已忽略，不再因为日志导致工作区脏
+- pull 前会尝试 `git restore sync/apple-reminders-export.json`，把它当作可重建运行产物处理
+- 如果还有其他 tracked 脏文件，仍然跳过 pull，但继续用当前本地 export
+- `git fetch` / `git pull` 失败时只记日志，不破坏本地仓库
+- 可通过 `GTD_APPLE_REMINDERS_ENABLE_GIT_PULL=0` 关闭自动 pull
+- 可通过 `GTD_APPLE_REMINDERS_GIT_RESTORE_EXPORT_BEFORE_PULL=0` 关闭 pull 前自动 restore export
+- 保持原手动执行方式兼容
 
 ### 状态与日志
 

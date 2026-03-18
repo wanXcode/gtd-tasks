@@ -11,6 +11,7 @@ from apple_reminders_sync_lib import (  # noqa: E402
     EXPORT_PATH,
     PushNotConfigured,
     export_sync_payload,
+    git_sync_export,
     load_state,
     push_sync_payload,
     setup_logger,
@@ -24,6 +25,8 @@ def build_parser():
     parser.add_argument('--changed-only', action='store_true', help='仅导出/同步自上次状态变化的任务')
     parser.add_argument('--output', type=Path, help='导出 JSON 输出路径')
     parser.add_argument('--dry-run', action='store_true', help='仅导出，不真正执行 AppleScript push')
+    parser.add_argument('--git-sync', action='store_true', help='导出后尝试安全 git add/commit/push 仅限 sync 文件')
+    parser.add_argument('--git-push', action='store_true', help='与 --git-sync 一起使用时，额外执行 git push')
     parser.add_argument('--pretty', action='store_true', help='输出 JSON 时格式化')
     return parser
 
@@ -46,11 +49,14 @@ def main():
 
     if args.mode == 'export':
         payload = export_sync_payload(task_ids=args.task_ids, changed_only=args.changed_only, output_path=args.output, logger=logger)
-        dump({
+        result = {
             'status': 'exported',
             'task_count': len(payload.get('tasks', [])),
             'output': str(args.output or EXPORT_PATH),
-        }, pretty=args.pretty)
+        }
+        if args.git_sync or args.git_push:
+            result['git_sync'] = git_sync_export(logger=logger, enable_commit=True, enable_push=args.git_push, dry_run=args.dry_run)
+        dump(result, pretty=args.pretty)
         return
 
     if args.mode == 'push':

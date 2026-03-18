@@ -34,6 +34,17 @@
       <string>/usr/bin/python3</string>
       <key>OSASCRIPT_BIN</key>
       <string>/usr/bin/osascript</string>
+      <key>GTD_APPLE_REMINDERS_ENABLE_GIT_PULL</key>
+      <string>1</string>
+      <key>GTD_APPLE_REMINDERS_GIT_RESTORE_EXPORT_BEFORE_PULL</key>
+      <string>1</string>
+      <key>GTD_APPLE_REMINDERS_GIT_REMOTE</key>
+      <string>origin</string>
+      <!-- 可选：如果要固定分支，可取消注释并填写真实值 -->
+      <!--
+      <key>GTD_APPLE_REMINDERS_GIT_BRANCH</key>
+      <string>main</string>
+      -->
     </dict>
   </dict>
 </plist>
