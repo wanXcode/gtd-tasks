@@ -187,7 +187,12 @@ def auto_push_after_write(task_ids, source, sync=False):
     if not sync:
         return
     try:
-        result = maybe_auto_push(source=source, task_ids=task_ids, logger=LOGGER)
+        # 稳定性优先：自动链路不要再只按 task_id 导出单任务快照，
+        # 否则 export 文件会在某些轮次只剩一条新增/变更任务，Mac 端就可能
+        # 在 pull 成功后消费到不完整或看似“旧”的 payload。
+        # 这里改为 changed-only：仍然只覆盖发生变化的 open 任务集合，
+        # 但不会被调用点传入的单 task_id 限制住导出语义。
+        result = maybe_auto_push(source=source, changed_only=True, logger=LOGGER)
         LOGGER.info('auto push result: %s', result)
     except Exception as exc:
         LOGGER.warning('auto push failed: %s', exc)

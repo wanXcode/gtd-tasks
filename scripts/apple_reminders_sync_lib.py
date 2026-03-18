@@ -383,7 +383,22 @@ def maybe_auto_push(source: str, task_ids: Optional[Iterable[str]] = None, chang
         logger.info('auto push disabled for source=%s', source)
         return {'status': 'disabled', 'source': source}
 
-    payload = export_sync_payload(task_ids=task_ids, changed_only=changed_only, logger=logger)
+    effective_task_ids = list(task_ids or [])
+    effective_changed_only = bool(changed_only)
+
+    # 自动链路稳定性优先：如果调用方只给了 task_ids，但没有显式要求 changed_only，
+    # 那么优先切到 changed-only 导出，避免把共享 export 文件写成“单任务快照”。
+    # 仍保留显式 task_ids 能力给手动脚本/调试入口使用。
+    if effective_task_ids and not effective_changed_only:
+        logger.info(
+            'auto push source=%s received task_ids=%s without changed_only; fallback to changed-only export for shared payload stability',
+            source,
+            effective_task_ids,
+        )
+        effective_task_ids = []
+        effective_changed_only = True
+
+    payload = export_sync_payload(task_ids=effective_task_ids or None, changed_only=effective_changed_only, logger=logger)
     git_result = git_sync_export(logger=logger)
     try:
         push_result = push_sync_payload(logger=logger)
@@ -391,6 +406,8 @@ def maybe_auto_push(source: str, task_ids: Optional[Iterable[str]] = None, chang
             'status': push_result.get('status', 'success'),
             'source': source,
             'exported': len(payload.get('tasks', [])),
+            'changed_only': effective_changed_only,
+            'requested_task_ids': effective_task_ids,
             'git_sync': git_result,
         }
     except PushNotConfigured as exc:
@@ -400,6 +417,8 @@ def maybe_auto_push(source: str, task_ids: Optional[Iterable[str]] = None, chang
             'source': source,
             'reason': str(exc),
             'exported': len(payload.get('tasks', [])),
+            'changed_only': effective_changed_only,
+            'requested_task_ids': effective_task_ids,
             'git_sync': git_result,
         }
 
