@@ -1,7 +1,7 @@
 {
   "version": "0.3.1",
   "timezone": "Asia/Shanghai",
-  "generated_at": "2026-03-19T03:27:37.889043+08:00",
+  "generated_at": "2026-03-19T03:38:45.310003+08:00",
   "source": {
     "tasks_file": "data/tasks.json",
     "mapping_file": "config/apple_reminders_mapping.json",
@@ -11,7 +11,7 @@
   "lists": [
     {
       "id": "index",
-      "name": "收集箱@Index",
+      "name": "收集箱@inbox",
       "status": "active",
       "notes": "默认收集入口，尚未澄清的事项先进入这里。"
     },
@@ -141,7 +141,7 @@
       "category": null,
       "tags": [],
       "updated_at": "2026-03-17T00:00:00+08:00",
-      "target_list": "收集箱@Index",
+      "target_list": "收集箱@inbox",
       "target_list_id": "index",
       "target_list_status": "active",
       "matched_rule_id": "fallback_open_tasks",

@@ -18,7 +18,7 @@
   "lists": [
     {
       "id": "index",
-      "name": "收集箱@Index",
+      "name": "收集箱@inbox",
       "status": "active",
       "notes": "默认收集入口，尚未澄清的事项先进入这里。"
     },
