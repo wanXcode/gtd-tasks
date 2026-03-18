@@ -38,10 +38,13 @@ run_git() {
 }
 
 normalize_bool() {
-  case "${1,,}" in
+  local raw lowered
+  raw="${1:-}"
+  lowered="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]')"
+  case "$lowered" in
     1|true|yes|on) echo "1" ;;
     0|false|no|off) echo "0" ;;
-    *) echo "$1" ;;
+    *) echo "$raw" ;;
   esac
 }
 
