@@ -1,0 +1,130 @@
+{
+  "version": "0.3.0-draft",
+  "timezone": "Asia/Shanghai",
+  "description": "Apple Reminders 分类映射配置。具体列表名需按用户截图最终确认；当前先把结构、优先级和规则引擎落地。",
+  "classification_policy": {
+    "source_of_truth": "gtd-tasks",
+    "reminders_taxonomy_status": "pending_user_confirmation",
+    "default_open_statuses": ["open"],
+    "excluded_statuses": ["done", "cancelled", "archived"],
+    "rule_priority_order": [
+      "manual_tag_rules",
+      "keyword_rules",
+      "quadrant_rules",
+      "bucket_rules",
+      "fallback_rules"
+    ],
+    "rule_conflict_resolution": "first_match_wins"
+  },
+  "lists": [
+    {
+      "id": "list_waiting",
+      "name": "待确认-跟进",
+      "status": "placeholder",
+      "notes": "占位名，等待用户按截图最终确认。适合等待他人回复、跟进型任务。"
+    },
+    {
+      "id": "list_me_action",
+      "name": "待确认-我来做",
+      "status": "placeholder",
+      "notes": "占位名，等待用户按截图最终确认。适合明确由自己推进的任务。"
+    },
+    {
+      "id": "list_focus",
+      "name": "待确认-重点推进",
+      "status": "placeholder",
+      "notes": "占位名，等待用户按截图最终确认。适合高优先级/重要任务。"
+    },
+    {
+      "id": "list_schedule_soon",
+      "name": "待确认-近期安排",
+      "status": "placeholder",
+      "notes": "占位名，等待用户按截图最终确认。适合近期时间性任务。"
+    },
+    {
+      "id": "list_backlog",
+      "name": "待确认-整理池",
+      "status": "placeholder",
+      "notes": "占位名，等待用户按截图最终确认。作为默认兜底列表，保证任何 open 任务都能导出。"
+    }
+  ],
+  "rules": [
+    {
+      "id": "manual_wait_tag",
+      "name": "WAIT 标签优先进入跟进类列表",
+      "priority": 100,
+      "target_list_id": "list_waiting",
+      "all": [
+        { "field": "status", "operator": "in", "value": ["open"] },
+        { "field": "tags", "operator": "contains_any", "value": ["WAIT", "FOLLOWUP", "FOLLOW_UP"] }
+      ]
+    },
+    {
+      "id": "manual_me_tag",
+      "name": "ME 标签优先进入我来做类列表",
+      "priority": 90,
+      "target_list_id": "list_me_action",
+      "all": [
+        { "field": "status", "operator": "in", "value": ["open"] },
+        { "field": "tags", "operator": "contains_any", "value": ["ME"] }
+      ]
+    },
+    {
+      "id": "keyword_reply_or_followup",
+      "name": "标题或备注出现回信/跟进/确认时归入跟进类",
+      "priority": 80,
+      "target_list_id": "list_waiting",
+      "all": [
+        { "field": "status", "operator": "in", "value": ["open"] },
+        {
+          "any": [
+            { "field": "title", "operator": "contains_any_text", "value": ["回信", "回复", "跟进", "确认"] },
+            { "field": "note", "operator": "contains_any_text", "value": ["回信", "回复", "跟进", "确认"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quadrant_q1_focus",
+      "name": "Q1 任务先归到重点推进类",
+      "priority": 70,
+      "target_list_id": "list_focus",
+      "all": [
+        { "field": "status", "operator": "in", "value": ["open"] },
+        { "field": "quadrant", "operator": "equals", "value": "q1" }
+      ]
+    },
+    {
+      "id": "bucket_today_or_tomorrow",
+      "name": "today / tomorrow 进入近期安排类",
+      "priority": 60,
+      "target_list_id": "list_schedule_soon",
+      "all": [
+        { "field": "status", "operator": "in", "value": ["open"] },
+        { "field": "bucket", "operator": "in", "value": ["today", "tomorrow"] }
+      ]
+    },
+    {
+      "id": "fallback_open_tasks",
+      "name": "默认兜底：所有 open 任务进入整理池",
+      "priority": 10,
+      "target_list_id": "list_backlog",
+      "all": [
+        { "field": "status", "operator": "in", "value": ["open"] }
+      ]
+    }
+  ],
+  "export": {
+    "output_path": "sync/apple-reminders-export.json",
+    "include_debug_fields": true,
+    "note_template": [
+      "[GTD_ID] {{id}}",
+      "[GTD_BUCKET] {{bucket}}",
+      "[GTD_QUADRANT] {{quadrant}}",
+      "[GTD_TAGS] {{tags_csv}}",
+      "[GTD_UPDATED_AT] {{updated_at}}",
+      "",
+      "{{note}}"
+    ]
+  }
+}

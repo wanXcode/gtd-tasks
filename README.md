@@ -1,112 +1,194 @@
-# GTD Tasks - 工作事项管理
+# GTD Tasks
 
-基于 GTD + 四象限法则的待办管理系统，专为 OpenClaw AI 助手设计。
+一个基于 `data/tasks.json` 主库的本机 GTD 系统，给 OpenClaw / AI 助手和人一起用。
 
-## 🚀 快速部署
+从 v0.2.1 开始，`today.md / inbox.md / matrix/*` 不再是事实源，只是渲染视图。
+从 v0.2.2 开始，补齐了三层能力：
 
-### 一键安装
+1. 更完整的 CLI 操作闭环
+2. 自然语言录入入口 `scripts/nlp_capture.py`
+3. 更适合复盘的 `done.md` 与 `weekly/review-latest.md`
 
-```bash
-curl -sSL https://raw.githubusercontent.com/wanXcode/gtd-tasks/main/deploy.sh | bash
-```
+时间语义统一按 `Asia/Shanghai`（UTC+8）解释。
 
-### 手动部署
+## 目录结构
 
-```bash
-# 1. 克隆仓库
-cd ~/.openclaw/workspace
-git clone https://github.com/wanXcode/gtd-tasks.git
-
-# 2. 进入目录
-cd gtd-tasks
-
-# 3. 设置 Git（如果未设置）
-git config user.email "your@email.com"
-git config user.name "Your Name"
-
-# 4. 创建定时任务（可选）
-openclaw cron add --name "gtd-daily-checkin" \
-  --cron "30 20 * * *" \
-  --tz "Asia/Shanghai" \
-  --message "你是GTD任务管理助手..." \
-  --session isolated
-```
-
-## 📁 目录结构
-
-```
+```text
 ├── data/
-│   ├── tasks.json    # v0.2.1 主库（唯一事实源）
-│   └── README.md     # 数据层说明
+│   ├── tasks.json              # 主库，唯一事实源
+│   └── README.md
 ├── scripts/
-│   ├── render_views.py   # 生成 today/inbox/matrix 视图
-│   ├── task_cli.py       # 任务增删改查
-│   └── migrate_legacy.py # 迁移占位脚本
-├── inbox.md          # 收集箱/总览（由主库生成）
-├── today.md          # 今日待办（由主库生成）
-├── matrix/           # 四象限视图（由主库生成）
+│   ├── task_cli.py             # 结构化增删改查/批量操作
+│   ├── nlp_capture.py          # 自然语言录入（preview/apply）
+│   ├── render_views.py         # 渲染 today/inbox/done/weekly/matrix
+│   └── migrate_legacy.py
+├── today.md                    # 今日视图
+├── inbox.md                    # 总览视图
+├── done.md                     # 已完成/取消/归档视图
+├── weekly/
+│   └── review-latest.md        # 最新周回顾视图
+├── matrix/
 │   ├── q1-urgent-important.md
 │   ├── q2-important-not-urgent.md
 │   ├── q3-urgent-not-important.md
 │   └── q4-not-urgent-not-important.md
-├── archive/          # 已完成归档
-└── deploy.sh         # 一键部署脚本
+└── archive/
 ```
 
-## 🔄 使用流程
+## 数据原则
 
-1. **收集/更新** → 随时告诉 AI 助理，或通过 `task_cli.py` 更新主库
-2. **主库存储** → 所有任务统一写入 `data/tasks.json`
-3. **渲染视图** → 通过 `render_views.py` 生成 `today.md / inbox.md / matrix/*`
-4. **提醒** → 每晚 8:30 定时脚本读取 `today.md`
-5. **执行/完成** → 标记完成后自动从待办视图移除，进入已处理
+- `data/tasks.json` 是唯一事实源
+- Markdown 文件全部由脚本自动生成
+- “今天 / 明天 / 下周 / 未来” 等时间判断固定按北京时间
+- 默认任务字段里，`bucket=future`、`quadrant=q2`
 
-## 📋 四象限说明
+## CLI：结构化任务操作
 
-| 象限 | 特征 | 策略 |
-|------|------|------|
-| Q1 🔴 | 紧急重要 | 立即亲自处理 |
-| Q2 🟡 | 重要不紧急 | 计划时间，重点投入 |
-| Q3 🟠 | 紧急不重要 | 尽量委托他人 |
-| Q4 ⚪ | 不紧急不重要 | 减少或不做 |
-
-## 💬 常用指令
-
-对 AI 助理说：
-- "帮我记个事：xxx" → 添加到收集箱
-- "生成今日待办" → 从四象限挑选优先级
-- "xxx完成了" → 标记完成并归档
-- "查看本周总结" → 生成周报
-
-## 🔧 配置说明
-
-### 定时任务
-默认每晚8:30提醒回顾当日完成情况。如需修改时间：
+先看帮助：
 
 ```bash
-# 删除旧任务
-openclaw cron rm gtd-daily-checkin
-
-# 创建新任务（例如改为晚上9点）
-openclaw cron add --name "gtd-daily-checkin" \
-  --cron "0 21 * * *" \
-  --tz "Asia/Shanghai" \
-  --message "..." \
-  --session isolated
+python3 scripts/task_cli.py --help
+python3 scripts/task_cli.py list --help
 ```
 
-### GitHub 同步
-修改文件后记得推送：
+### 新增任务
 
 ```bash
-git add .
-git commit -m "更新任务状态"
-git push
+python3 scripts/task_cli.py add "给张闯回信"
+python3 scripts/task_cli.py add "整理财务方案" --bucket today --quadrant q1 --tags ME FIN --note "今晚过一遍"
 ```
 
-## 📄 License
+默认 bucket 现在是 `future`，这样更符合“先收进去，再决定今天/明天”的节奏。
 
-MIT
+### 列表查询
+
+```bash
+python3 scripts/task_cli.py list
+python3 scripts/task_cli.py list --bucket today
+python3 scripts/task_cli.py list --status open --tag ME
+python3 scripts/task_cli.py list --text 规划 --verbose --limit 10
+```
+
+支持筛选：
+
+- `--id`
+- `--status`
+- `--bucket`
+- `--quadrant`
+- `--tag`
+- `--text`
+- `--limit`
+- `--verbose`
+
+### 更新 / 完成 / 重开
+
+```bash
+python3 scripts/task_cli.py update tsk_20260317_008 --bucket today --note "今晚发出"
+python3 scripts/task_cli.py update tsk_20260317_008 --add-tags URGENT
+python3 scripts/task_cli.py done tsk_20260317_008
+python3 scripts/task_cli.py reopen tsk_20260317_008 --bucket tomorrow
+```
+
+### 批量 move / tag
+
+```bash
+python3 scripts/task_cli.py move --tag ME --bucket today --to-bucket future
+python3 scripts/task_cli.py move --text 规划 --bucket tomorrow --to-bucket today
+
+python3 scripts/task_cli.py tag add ME --text 回信
+python3 scripts/task_cli.py tag remove ME --id tsk_20260317_008
+python3 scripts/task_cli.py tag set ME WAIT --text 海南
+```
+
+## NLP：自然语言录入
+
+v0.2.2 新增 `scripts/nlp_capture.py`，用于把一句自然语言先解析成结构化任务，再决定是否写入主库。
+
+### preview：只预览，不写入
+
+```bash
+python3 scripts/nlp_capture.py "明天提醒我给张闯回信 #ME"
+python3 scripts/nlp_capture.py "把海南公司主体先放未来，等确认后再推进"
+```
+
+默认模式是 `preview`，会输出：
+
+- `title`
+- `bucket`
+- `quadrant`
+- `tags`
+- `note`
+- `timezone`
+- `business_now`
+
+### apply：解析后直接落库
+
+```bash
+python3 scripts/nlp_capture.py "明天提醒我给张闯回信 #ME" --mode apply
+```
+
+`apply` 会：
+
+1. 先打印解析结果
+2. 调用 `task_cli.py add`
+3. 自动触发 `render_views.py`
+
+### 当前支持的轻量规则
+
+- bucket：识别 `今天 / 明天 / 下周 / 以后 / 先放未来` 等
+- tags：识别显式标签（如 `#ME`）和少量中文表达（如“我来处理”“等确认”）
+- note：从“备注/说明/note”或少量提示短语里提取
+- quadrant：识别 `#Q1~#Q4` 及少量中文表达，否则默认 `q2`
+
+这版追求的是“够用、稳定、可预览”，不是复杂 NLP 引擎。
+
+## 视图生成
+
+执行：
+
+```bash
+python3 scripts/render_views.py
+```
+
+会生成：
+
+- `today.md`
+- `inbox.md`
+- `done.md`
+- `weekly/review-latest.md`
+- `matrix/*.md`
+
+### done.md
+
+集中查看：
+
+- 已完成
+- 已取消
+- 已归档
+
+### weekly/review-latest.md
+
+集中看：
+
+- 本周新增任务数
+- 本周完成/取消/归档任务数
+- 当前未完成任务数
+- 按 bucket 分类的待办概览
+- 本周新增 / 本周完成 / 当前未完成任务明细
+
+## 推荐日常流程
+
+1. 有新事项，先用 `nlp_capture.py` preview/apply 收进去
+2. 要批量整理时，用 `task_cli.py list / move / tag / update`
+3. 每次修改后自动 render，直接看 `today.md / done.md / weekly/review-latest.md`
+4. 定时提醒或 AI 对话都只读视图，不直接把 Markdown 当事实源改写
+
+## 版本
+
+- 当前目标版本：`v0.2.2`
+- 需求文档：`requirements-v0.2.2.md`
+- 版本说明：`release-v0.2.2.md`
 
 ---
-*由 AI 助理小花维护*
+
+小花的看法：这套系统现在已经不是“记几条待办”了，而是一个轻量、稳定、适合长期维护的个人任务主库。下一步如果再进化，应该优先做同步能力，不是再堆命令。 

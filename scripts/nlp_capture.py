@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import re
+import subprocess
+from datetime import datetime, timedelta
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+ROOT = Path('/root/.openclaw/workspace/gtd-tasks')
+DATA = ROOT / 'data' / 'tasks.json'
+TASK_CLI = ROOT / 'scripts' / 'task_cli.py'
+TZ = ZoneInfo('Asia/Shanghai')
+DEFAULT_BUCKET = 'future'
+DEFAULT_QUADRANT = 'q2'
+BUCKET_KEYWORDS = [
+    ('today', ['今天', '今日', '今晚', '今晚上', '今天内', '今天处理', '今天做']),
+    ('tomorrow', ['明天', '明日', '明早', '明晚', '明天下午', '明天上午']),
+]
+TAG_PATTERNS = [
+    ('ME', [r'#ME\b', r'我来处理', r'我自己做', r'我自己处理', r'我来做', r'我跟进', r'亲自处理', r'由我处理']),
+    ('WAIT', [r'#WAIT\b', r'等确认', r'等回复', r'等待', r'待确认', r'待回复']),
+    ('DELEGATE', [r'#DELEGATE\b', r'委托', r'让.+处理', r'安排.+处理', r'交给.+处理']),
+]
+QUADRANT_PATTERNS = [
+    ('q1', [r'#Q1\b', r'紧急重要', r'马上处理', r'立即处理', r'尽快处理']),
+    ('q2', [r'#Q2\b', r'重要不紧急', r'计划处理', r'后续推进', r'先放未来']),
+    ('q3', [r'#Q3\b', r'紧急不重要']),
+    ('q4', [r'#Q4\b', r'不紧急不重要']),
+]
+NOTE_HINTS = [
+    '下周', '下下周', '月底', '月末', '周末', '等确认', '等回复', '后续推进',
+    '已出初步方案', '需要确认', '等老板', '等对方'
+]
+STOP_PREFIXES = [
+    '提醒我', '帮我', '记得', '记一下', '记录一下', '新增任务', '加个任务', '待办', 'todo', 'todo:', 'todo：'
+]
+TRIM_TAILS = ['先放未来', '放未来', '记一下', '提醒我', '帮我', '这件事', '这个事情']
+
+
+def now_dt():
+    return datetime.now(TZ)
+
+
+def load_data():
+    with open(DATA, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    data.setdefault('tasks', [])
+    return data
+
+
+def clean_spaces(text: str) -> str:
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+
+def detect_bucket(text: str, default_bucket: str = DEFAULT_BUCKET):
+    for bucket, kws in BUCKET_KEYWORDS:
+        if any(kw in text for kw in kws):
+            return bucket
+    if re.search(r'下周|以后|晚点|过几天|之后|有空', text):
+        return 'future'
+    return default_bucket
+
+
+def detect_tags(text: str):
+    tags = set(re.findall(r'#([A-Za-z][A-Za-z0-9_-]*)', text))
+    for tag, patterns in TAG_PATTERNS:
+        if any(re.search(p, text, flags=re.I) for p in patterns):
+            tags.add(tag)
+    return sorted(tags)
+
+
+def detect_quadrant(text: str, bucket: str, default_quadrant: str = DEFAULT_QUADRANT):
+    for quadrant, patterns in QUADRANT_PATTERNS:
+        if any(re.search(p, text, flags=re.I) for p in patterns):
+            return quadrant
+    if bucket == 'today' and re.search(r'尽快|马上|立即|urgent|紧急', text, flags=re.I):
+        return 'q1'
+    return default_quadrant
+
+
+def extract_note(text: str):
+    notes = []
+
+    explicit = re.search(r'(?:备注|note)\s*[:：]\s*(.+)$', text, flags=re.I)
+    if explicit:
+        value = re.sub(r'#[A-Za-z][A-Za-z0-9_-]*', ' ', explicit.group(1))
+        value = clean_spaces(value).strip(' ，,。；;:：')
+        if value:
+            notes.append(value)
+
+    for hint in NOTE_HINTS:
+        if hint in text:
+            seg = re.search(rf'([^。；;，,]*{re.escape(hint)}[^。；;]*)', text)
+            if seg:
+                value = seg.group(1)
+                value = re.sub(r'^(把|将)\s*', '', value)
+                value = re.sub(r'#[A-Za-z][A-Za-z0-9_-]*', ' ', value)
+                value = re.sub(r'(?:提醒我|帮我|记得|记一下|记录一下)\s*', ' ', value)
+                value = re.sub(r'(?:今天|今日|今晚|明天|明日|下周|以后)\s*', ' ', value)
+                value = clean_spaces(value).strip(' ，,。；;:：')
+                if value and len(value) <= 30 and value not in notes:
+                    notes.append(value)
+
+    deduped = []
+    for note in notes:
+        if note not in deduped:
+            deduped.append(note)
+    return '；'.join(deduped)
+
+
+def strip_tags_and_meta(text: str):
+    text = re.sub(r'#[A-Za-z][A-Za-z0-9_-]*', ' ', text)
+    meta_patterns = [
+        r'今天', r'今日', r'今晚', r'明天', r'明日', r'下周', r'以后',
+        r'提醒我', r'帮我', r'记得', r'记一下', r'记录一下', r'新增任务',
+        r'我来处理', r'我自己做', r'我自己处理', r'我来做', r'我跟进', r'亲自处理',
+        r'先放未来', r'放未来', r'等确认', r'等回复', r'待确认', r'待回复',
+        r'紧急重要', r'重要不紧急', r'紧急不重要', r'不紧急不重要',
+        r'备注[:：]?.*$', r'说明[:：]?.*$', r'note[:：]?.*$'
+    ]
+    for p in meta_patterns:
+        text = re.sub(p, ' ', text, flags=re.I)
+    return clean_spaces(text)
+
+
+def derive_title(text: str):
+    title = strip_tags_and_meta(text)
+    for prefix in STOP_PREFIXES:
+        if title.startswith(prefix):
+            title = title[len(prefix):].strip()
+    title = re.sub(r'^(把|将|给|替|去|要|先|再)\s*', '', title)
+    title = re.sub(r'\b(后再推进|再推进|推进)\b$', '', title)
+    title = re.sub(r'\s*[，,]\s*', ' ', title)
+    for tail in TRIM_TAILS:
+        if title.endswith(tail):
+            title = title[:-len(tail)].strip()
+    title = title.strip(' ，,。；;:：')
+    title = re.sub(r'^(一下|一个|这件事|这个事情)\s*', '', title)
+    return title or clean_spaces(text)
+
+
+def build_preview(text: str, default_bucket: str, default_quadrant: str):
+    raw = clean_spaces(text)
+    bucket = detect_bucket(raw, default_bucket)
+    tags = detect_tags(raw)
+    quadrant = detect_quadrant(raw, bucket, default_quadrant)
+    note = extract_note(raw)
+    title = derive_title(raw)
+    return {
+        'input': raw,
+        'title': title,
+        'bucket': bucket,
+        'quadrant': quadrant,
+        'tags': tags,
+        'note': note,
+        'timezone': 'Asia/Shanghai',
+        'business_now': now_dt().isoformat(timespec='seconds'),
+        'mode': 'preview',
+    }
+
+
+def print_preview(obj):
+    print(json.dumps(obj, ensure_ascii=False, indent=2))
+
+
+def apply_capture(preview):
+    cmd = [
+        'python3', str(TASK_CLI), 'add', preview['title'],
+        '--bucket', preview['bucket'],
+        '--quadrant', preview['quadrant'],
+    ]
+    if preview.get('note'):
+        cmd += ['--note', preview['note']]
+    if preview.get('tags'):
+        cmd += ['--tags', *preview['tags']]
+    completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    return completed.stdout.strip()
+
+
+def build_parser():
+    parser = argparse.ArgumentParser(description='Natural language task capture')
+    parser.add_argument('text', help='自然语言任务描述')
+    parser.add_argument('--mode', choices=['preview', 'apply'], default='preview')
+    parser.add_argument('--default-bucket', choices=['today', 'tomorrow', 'future'], default=DEFAULT_BUCKET)
+    parser.add_argument('--default-quadrant', choices=['q1', 'q2', 'q3', 'q4'], default=DEFAULT_QUADRANT)
+    return parser
+
+
+def main():
+    parser = build_parser()
+    args = parser.parse_args()
+    preview = build_preview(args.text, args.default_bucket, args.default_quadrant)
+    preview['mode'] = args.mode
+    print_preview(preview)
+    if args.mode == 'apply':
+        result = apply_capture(preview)
+        print(result)
+
+
+if __name__ == '__main__':
+    main()

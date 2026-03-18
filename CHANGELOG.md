@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, adapted for this repo.
 
+## [v0.2.2] - 2026-03-17
+
+### Added
+- Added `scripts/nlp_capture.py` for natural-language task capture with `preview` / `apply` modes
+- Added rendered management views:
+  - `done.md`
+  - `weekly/review-latest.md`
+- Added v0.2.2 release notes: `release-v0.2.2.md`
+
+### Changed
+- Expanded `scripts/render_views.py` to render `done.md` and weekly review output in addition to existing views
+- Adjusted `scripts/task_cli.py` default add bucket from `today` to `future` to match v0.2.2 capture workflow
+- Updated README to reflect v0.2.2 workflow, CLI coverage, and NLP capture usage
+- Kept all business-time semantics aligned to `Asia/Shanghai`
+
+### Fixed
+- Fixed documentation mismatch between v0.2.2 requirements and actual CLI default capture behavior
+- Fixed missing rendered artifacts for completion review and weekly review scenarios
+
 ## [v0.2.1] - 2026-03-17
 
 ### Added
