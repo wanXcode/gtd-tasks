@@ -15,6 +15,7 @@ LOG_DIR = ROOT / 'logs'
 TASKS_PATH = ROOT / 'data' / 'tasks.json'
 MAPPING_PATH = ROOT / 'config' / 'apple_reminders_mapping.json'
 EXPORT_PATH = SYNC_DIR / 'apple-reminders-export.json'
+TMP_EXPORT_DIR = SYNC_DIR / 'tmp'
 STATE_PATH = SYNC_DIR / 'apple-reminders-sync-state.json'
 DEFAULT_LOG_PATH = LOG_DIR / 'apple-reminders-sync.log'
 EXPORT_SCRIPT = ROOT / 'scripts' / 'export_apple_reminders_sync.py'
@@ -60,6 +61,7 @@ def now_iso() -> str:
 
 def ensure_dirs() -> None:
     SYNC_DIR.mkdir(parents=True, exist_ok=True)
+    TMP_EXPORT_DIR.mkdir(parents=True, exist_ok=True)
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -282,11 +284,24 @@ def run_subprocess(cmd: List[str], logger: logging.Logger, check: bool = True) -
     return completed
 
 
+def derive_export_output_path(task_ids: Optional[Iterable[str]] = None, changed_only: bool = False, output_path: Optional[Path] = None) -> Path:
+    if output_path:
+        return output_path
+    if task_ids:
+        ensure_dirs()
+        task_part = '-'.join(sorted({str(task_id) for task_id in task_ids if task_id})) or 'task'
+        safe_task_part = ''.join(ch if ch.isalnum() or ch in {'-', '_'} else '_' for ch in task_part)[:120]
+        timestamp = now_dt().strftime('%Y%m%d-%H%M%S')
+        return TMP_EXPORT_DIR / f'apple-reminders-task-export-{timestamp}-{safe_task_part}.json'
+    return EXPORT_PATH
+
+
 def export_sync_payload(task_ids: Optional[Iterable[str]] = None, changed_only: bool = False, output_path: Optional[Path] = None, logger: Optional[logging.Logger] = None) -> Dict[str, Any]:
     logger = logger or setup_logger()
     state = load_state()
     tasks_doc = load_tasks_doc()
     changed_ids = update_state_from_tasks(state, tasks_doc)
+    payload_path = derive_export_output_path(task_ids=task_ids, changed_only=changed_only, output_path=output_path)
 
     cmd = ['python3', str(EXPORT_SCRIPT)]
     if task_ids:
@@ -294,11 +309,9 @@ def export_sync_payload(task_ids: Optional[Iterable[str]] = None, changed_only: 
             cmd += ['--task-id', str(task_id)]
     elif changed_only:
         cmd.append('--changed-only')
-    if output_path:
-        cmd += ['--output', str(output_path)]
+    cmd += ['--output', str(payload_path)]
 
     completed = run_subprocess(cmd, logger)
-    payload_path = output_path or EXPORT_PATH
     payload = load_json(payload_path, {'tasks': []})
     exported_at = payload.get('generated_at') or now_iso()
     state['last_export'] = {

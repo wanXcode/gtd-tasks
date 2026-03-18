@@ -15,6 +15,7 @@ from apple_reminders_sync_lib import (  # noqa: E402
     MAPPING_PATH,
     TASKS_PATH,
     build_incremental_tasks,
+    derive_export_output_path,
     load_state,
     mark_exported_tasks,
     now_iso,
@@ -199,9 +200,9 @@ def export_payload(tasks_doc: Dict[str, Any], mapping: Dict[str, Any], selected_
 
 def build_parser():
     parser = argparse.ArgumentParser(description='Export Apple Reminders sync payload')
-    parser.add_argument('--task-id', action='append', dest='task_ids', help='仅导出指定 task id，可重复传入')
-    parser.add_argument('--changed-only', action='store_true', help='仅导出发生变化的任务')
-    parser.add_argument('--output', type=Path, help='导出路径，默认 sync/apple-reminders-export.json')
+    parser.add_argument('--task-id', action='append', dest='task_ids', help='仅导出指定 task id，可重复传入；未显式传 --output 时默认写入 sync/tmp/ 下的临时文件')
+    parser.add_argument('--changed-only', action='store_true', help='仅导出发生变化的任务；未显式传 --output 时默认写入共享 sync/apple-reminders-export.json')
+    parser.add_argument('--output', type=Path, help='导出路径；不传时：full/changed-only 写 sync/apple-reminders-export.json，单任务导出写 sync/tmp/ 临时文件')
     return parser
 
 
@@ -224,7 +225,9 @@ def main() -> None:
         requested_task_ids=list(args.task_ids or []),
     )
 
-    output_path = args.output or Path(mapping.get('export', {}).get('output_path') or DEFAULT_OUTPUT_PATH)
+    output_path = derive_export_output_path(task_ids=args.task_ids, changed_only=args.changed_only, output_path=args.output)
+    if not args.output and not args.task_ids and not args.changed_only:
+        output_path = Path(mapping.get('export', {}).get('output_path') or DEFAULT_OUTPUT_PATH)
     if not output_path.is_absolute():
         output_path = ROOT / output_path
     output_path.parent.mkdir(parents=True, exist_ok=True)
