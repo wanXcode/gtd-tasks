@@ -147,7 +147,6 @@
     "output_path": "sync/apple-reminders-export.json",
     "include_debug_fields": false,
     "note_template": [
-      "[GTD_ID] {{id}}",
       "{{note}}"
     ]
   }

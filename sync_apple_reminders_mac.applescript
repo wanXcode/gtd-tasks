@@ -21,7 +21,7 @@ on run argv
 					set dueDateText to item 5 of parts
 
 					set targetListRef to my ensureListByName(listName)
-					set reminderRef to my findReminderByGtdId(targetListRef, gtdId)
+					set reminderRef to my findReminder(targetListRef, gtdId, reminderTitle)
 
 					if reminderRef is missing value then
 						set reminderRef to make new reminder with properties {name:reminderTitle, body:reminderBody} at end of reminders of targetListRef
@@ -60,7 +60,7 @@ on ensureListByName(listName)
 	end tell
 end ensureListByName
 
-on findReminderByGtdId(targetListRef, gtdId)
+on findReminder(targetListRef, gtdId, reminderTitle)
 	tell application "Reminders"
 		repeat with oneReminder in every reminder of targetListRef
 			try
@@ -68,11 +68,12 @@ on findReminderByGtdId(targetListRef, gtdId)
 			on error
 				set bodyText to ""
 			end try
-			if bodyText contains ("[GTD_ID] " & gtdId) then return oneReminder
+			if gtdId is not "" and bodyText contains ("[GTD_ID] " & gtdId) then return oneReminder
+			if (name of oneReminder as text) is reminderTitle then return oneReminder
 		end repeat
 	end tell
 	return missing value
-end findReminderByGtdId
+end findReminder
 
 on applyDueDate(targetReminder, dueDateText)
 	if dueDateText is "" then return

@@ -1,7 +1,7 @@
 {
   "version": "0.3.1",
   "timezone": "Asia/Shanghai",
-  "generated_at": "2026-03-19T03:48:33.184174+08:00",
+  "generated_at": "2026-03-19T03:54:17.821995+08:00",
   "source": {
     "tasks_file": "data/tasks.json",
     "mapping_file": "config/apple_reminders_mapping.json",
@@ -57,7 +57,7 @@
       "matched_rule_id": "category_waiting_for",
       "matched_rule_name": "任务已显式标记 waiting_for",
       "due_date": "2026-03-19",
-      "reminder_notes": "[GTD_ID] tsk_20260317_001"
+      "reminder_notes": ""
     },
     {
       "gtd_id": "tsk_20260317_002",
@@ -75,7 +75,7 @@
       "matched_rule_id": "category_waiting_for",
       "matched_rule_name": "任务已显式标记 waiting_for",
       "due_date": "2026-03-19",
-      "reminder_notes": "[GTD_ID] tsk_20260317_002"
+      "reminder_notes": ""
     },
     {
       "gtd_id": "tsk_20260317_003",
@@ -93,7 +93,7 @@
       "matched_rule_id": "category_waiting_for",
       "matched_rule_name": "任务已显式标记 waiting_for",
       "due_date": "2026-03-19",
-      "reminder_notes": "[GTD_ID] tsk_20260317_003"
+      "reminder_notes": ""
     },
     {
       "gtd_id": "tsk_20260317_004",
@@ -111,7 +111,7 @@
       "matched_rule_id": "category_waiting_for",
       "matched_rule_name": "任务已显式标记 waiting_for",
       "due_date": "2026-03-20",
-      "reminder_notes": "[GTD_ID] tsk_20260317_004"
+      "reminder_notes": ""
     },
     {
       "gtd_id": "tsk_20260317_005",
@@ -129,7 +129,7 @@
       "matched_rule_id": "category_waiting_for",
       "matched_rule_name": "任务已显式标记 waiting_for",
       "due_date": "2026-03-20",
-      "reminder_notes": "[GTD_ID] tsk_20260317_005"
+      "reminder_notes": ""
     },
     {
       "gtd_id": "tsk_20260317_006",
@@ -147,7 +147,7 @@
       "matched_rule_id": "category_project",
       "matched_rule_name": "任务已显式标记 project",
       "due_date": "2026-03-20",
-      "reminder_notes": "[GTD_ID] tsk_20260317_006\n已出初步方案，下周实施"
+      "reminder_notes": "已出初步方案，下周实施"
     },
     {
       "gtd_id": "tsk_20260317_007",
@@ -165,7 +165,7 @@
       "matched_rule_id": "category_maybe",
       "matched_rule_name": "任务已显式标记 maybe",
       "due_date": null,
-      "reminder_notes": "[GTD_ID] tsk_20260317_007\n为工作室准备"
+      "reminder_notes": "为工作室准备"
     },
     {
       "gtd_id": "tsk_20260317_008",
@@ -185,7 +185,7 @@
       "matched_rule_id": "category_waiting_for",
       "matched_rule_name": "任务已显式标记 waiting_for",
       "due_date": null,
-      "reminder_notes": "[GTD_ID] tsk_20260317_008"
+      "reminder_notes": ""
     },
     {
       "gtd_id": "tsk_20260317_009",
@@ -205,7 +205,7 @@
       "matched_rule_id": "category_maybe",
       "matched_rule_name": "任务已显式标记 maybe",
       "due_date": null,
-      "reminder_notes": "[GTD_ID] tsk_20260317_009"
+      "reminder_notes": ""
     },
     {
       "gtd_id": "tsk_20260317_010",
@@ -225,7 +225,7 @@
       "matched_rule_id": "category_maybe",
       "matched_rule_name": "任务已显式标记 maybe",
       "due_date": null,
-      "reminder_notes": "[GTD_ID] tsk_20260317_010"
+      "reminder_notes": ""
     },
     {
       "gtd_id": "tsk_20260318_001",
@@ -245,7 +245,7 @@
       "matched_rule_id": "category_maybe",
       "matched_rule_name": "任务已显式标记 maybe",
       "due_date": null,
-      "reminder_notes": "[GTD_ID] tsk_20260318_001\n补 release 文档"
+      "reminder_notes": "补 release 文档"
     }
   ],
   "summary": {
