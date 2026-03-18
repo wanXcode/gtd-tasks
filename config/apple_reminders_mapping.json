@@ -1,114 +1,143 @@
 {
-  "version": "0.3.0-draft",
+  "version": "0.3.1",
   "timezone": "Asia/Shanghai",
-  "description": "Apple Reminders 分类映射配置。具体列表名需按用户截图最终确认；当前先把结构、优先级和规则引擎落地。",
+  "description": "Apple Reminders 分类映射配置。与用户当前正式 GTD 列表保持完全一致。",
   "classification_policy": {
     "source_of_truth": "gtd-tasks",
-    "reminders_taxonomy_status": "pending_user_confirmation",
+    "reminders_taxonomy_status": "confirmed",
     "default_open_statuses": ["open"],
     "excluded_statuses": ["done", "cancelled", "archived"],
     "rule_priority_order": [
+      "manual_category_rules",
       "manual_tag_rules",
       "keyword_rules",
-      "quadrant_rules",
-      "bucket_rules",
       "fallback_rules"
     ],
     "rule_conflict_resolution": "first_match_wins"
   },
   "lists": [
     {
-      "id": "list_waiting",
-      "name": "待确认-跟进",
-      "status": "placeholder",
-      "notes": "占位名，等待用户按截图最终确认。适合等待他人回复、跟进型任务。"
+      "id": "index",
+      "name": "收集箱@Index",
+      "status": "active",
+      "notes": "默认收集入口，尚未澄清的事项先进入这里。"
     },
     {
-      "id": "list_me_action",
-      "name": "待确认-我来做",
-      "status": "placeholder",
-      "notes": "占位名，等待用户按截图最终确认。适合明确由自己推进的任务。"
+      "id": "project",
+      "name": "项目@project",
+      "status": "active",
+      "notes": "需要多步推进、需要持续管理的项目。"
     },
     {
-      "id": "list_focus",
-      "name": "待确认-重点推进",
-      "status": "placeholder",
-      "notes": "占位名，等待用户按截图最终确认。适合高优先级/重要任务。"
+      "id": "next_action",
+      "name": "下一步行动@NextAction",
+      "status": "active",
+      "notes": "已经明确下一步动作、可以直接执行的事项。"
     },
     {
-      "id": "list_schedule_soon",
-      "name": "待确认-近期安排",
-      "status": "placeholder",
-      "notes": "占位名，等待用户按截图最终确认。适合近期时间性任务。"
+      "id": "waiting_for",
+      "name": "等待@Waiting For",
+      "status": "active",
+      "notes": "等待别人回复、确认、反馈、交付。"
     },
     {
-      "id": "list_backlog",
-      "name": "待确认-整理池",
-      "status": "placeholder",
-      "notes": "占位名，等待用户按截图最终确认。作为默认兜底列表，保证任何 open 任务都能导出。"
+      "id": "maybe",
+      "name": "可能的事@Maybe",
+      "status": "active",
+      "notes": "未来也许要做，但现在不承诺推进。"
     }
   ],
   "rules": [
     {
+      "id": "category_waiting_for",
+      "name": "任务已显式标记 waiting_for",
+      "priority": 120,
+      "target_list_id": "waiting_for",
+      "all": [
+        { "field": "status", "operator": "in", "value": ["open"] },
+        { "field": "category", "operator": "equals", "value": "waiting_for" }
+      ]
+    },
+    {
+      "id": "category_project",
+      "name": "任务已显式标记 project",
+      "priority": 119,
+      "target_list_id": "project",
+      "all": [
+        { "field": "status", "operator": "in", "value": ["open"] },
+        { "field": "category", "operator": "equals", "value": "project" }
+      ]
+    },
+    {
+      "id": "category_next_action",
+      "name": "任务已显式标记 next_action",
+      "priority": 118,
+      "target_list_id": "next_action",
+      "all": [
+        { "field": "status", "operator": "in", "value": ["open"] },
+        { "field": "category", "operator": "equals", "value": "next_action" }
+      ]
+    },
+    {
+      "id": "category_maybe",
+      "name": "任务已显式标记 maybe",
+      "priority": 117,
+      "target_list_id": "maybe",
+      "all": [
+        { "field": "status", "operator": "in", "value": ["open"] },
+        { "field": "category", "operator": "equals", "value": "maybe" }
+      ]
+    },
+    {
+      "id": "category_index",
+      "name": "任务已显式标记 index",
+      "priority": 116,
+      "target_list_id": "index",
+      "all": [
+        { "field": "status", "operator": "in", "value": ["open"] },
+        { "field": "category", "operator": "equals", "value": "index" }
+      ]
+    },
+    {
       "id": "manual_wait_tag",
-      "name": "WAIT 标签优先进入跟进类列表",
+      "name": "WAIT 标签优先进入等待",
       "priority": 100,
-      "target_list_id": "list_waiting",
+      "target_list_id": "waiting_for",
       "all": [
         { "field": "status", "operator": "in", "value": ["open"] },
         { "field": "tags", "operator": "contains_any", "value": ["WAIT", "FOLLOWUP", "FOLLOW_UP"] }
       ]
     },
     {
-      "id": "manual_me_tag",
-      "name": "ME 标签优先进入我来做类列表",
+      "id": "keyword_waiting_for",
+      "name": "标题或备注出现等待/确认/回复类词语时归入等待",
       "priority": 90,
-      "target_list_id": "list_me_action",
-      "all": [
-        { "field": "status", "operator": "in", "value": ["open"] },
-        { "field": "tags", "operator": "contains_any", "value": ["ME"] }
-      ]
-    },
-    {
-      "id": "keyword_reply_or_followup",
-      "name": "标题或备注出现回信/跟进/确认时归入跟进类",
-      "priority": 80,
-      "target_list_id": "list_waiting",
+      "target_list_id": "waiting_for",
       "all": [
         { "field": "status", "operator": "in", "value": ["open"] },
         {
           "any": [
-            { "field": "title", "operator": "contains_any_text", "value": ["回信", "回复", "跟进", "确认"] },
-            { "field": "note", "operator": "contains_any_text", "value": ["回信", "回复", "跟进", "确认"] }
+            { "field": "title", "operator": "contains_any_text", "value": ["等待", "等", "确认", "回复", "回信", "跟进", "催", "反馈"] },
+            { "field": "note", "operator": "contains_any_text", "value": ["等待", "等", "确认", "回复", "回信", "跟进", "催", "反馈"] }
           ]
         }
       ]
     },
     {
-      "id": "quadrant_q1_focus",
-      "name": "Q1 任务先归到重点推进类",
+      "id": "bucket_future_to_maybe",
+      "name": "future 默认归入可能的事",
       "priority": 70,
-      "target_list_id": "list_focus",
+      "target_list_id": "maybe",
       "all": [
         { "field": "status", "operator": "in", "value": ["open"] },
-        { "field": "quadrant", "operator": "equals", "value": "q1" }
-      ]
-    },
-    {
-      "id": "bucket_today_or_tomorrow",
-      "name": "today / tomorrow 进入近期安排类",
-      "priority": 60,
-      "target_list_id": "list_schedule_soon",
-      "all": [
-        { "field": "status", "operator": "in", "value": ["open"] },
-        { "field": "bucket", "operator": "in", "value": ["today", "tomorrow"] }
+        { "field": "bucket", "operator": "equals", "value": "future" }
       ]
     },
     {
       "id": "fallback_open_tasks",
-      "name": "默认兜底：所有 open 任务进入整理池",
+      "name": "默认兜底：所有 open 任务进入收集箱",
       "priority": 10,
-      "target_list_id": "list_backlog",
+      "target_list_id": "index",
       "all": [
         { "field": "status", "operator": "in", "value": ["open"] }
       ]
@@ -116,14 +145,9 @@
   ],
   "export": {
     "output_path": "sync/apple-reminders-export.json",
-    "include_debug_fields": true,
+    "include_debug_fields": false,
     "note_template": [
       "[GTD_ID] {{id}}",
-      "[GTD_BUCKET] {{bucket}}",
-      "[GTD_QUADRANT] {{quadrant}}",
-      "[GTD_TAGS] {{tags_csv}}",
-      "[GTD_UPDATED_AT] {{updated_at}}",
-      "",
       "{{note}}"
     ]
   }

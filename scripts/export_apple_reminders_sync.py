@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import re
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -99,10 +100,37 @@ def render_template(template_lines: List[str], task: Dict[str, Any]) -> str:
     return "\n".join(rendered)
 
 
+def derive_due_date(task: Dict[str, Any], business_date: Optional[str]) -> Optional[str]:
+    title = task.get("title", "") or ""
+    note = task.get("note", "") or ""
+    text = f"{title} {note}"
+
+    base_date = None
+    if business_date:
+        try:
+            base_date = datetime.strptime(business_date, "%Y-%m-%d").date()
+        except ValueError:
+            base_date = None
+
+    explicit = re.search(r"(20\d{2}-\d{2}-\d{2})", text)
+    if explicit:
+        return explicit.group(1)
+
+    if base_date is None:
+        return None
+
+    if "明天" in text or task.get("bucket") == "tomorrow":
+        return (base_date + timedelta(days=1)).isoformat()
+    if "今天" in text or task.get("bucket") == "today":
+        return base_date.isoformat()
+    return None
+
+
 def export_payload(tasks_doc: Dict[str, Any], mapping: Dict[str, Any]) -> Dict[str, Any]:
     lists = mapping.get("lists", [])
     lists_by_id = {item["id"]: item for item in lists}
     template_lines = mapping.get("export", {}).get("note_template", [])
+    business_date = tasks_doc.get("meta", {}).get("business_date")
     output_tasks = []
 
     for task in tasks_doc.get("tasks", []):
@@ -116,6 +144,7 @@ def export_payload(tasks_doc: Dict[str, Any], mapping: Dict[str, Any]) -> Dict[s
             "status": task.get("status"),
             "bucket": task.get("bucket"),
             "quadrant": task.get("quadrant"),
+            "category": task.get("category"),
             "tags": task.get("tags", []),
             "updated_at": task.get("updated_at"),
             "target_list": target_list.get("name"),
@@ -123,6 +152,7 @@ def export_payload(tasks_doc: Dict[str, Any], mapping: Dict[str, Any]) -> Dict[s
             "target_list_status": target_list.get("status", "active"),
             "matched_rule_id": matched_rule.get("id") if matched_rule else None,
             "matched_rule_name": matched_rule.get("name") if matched_rule else None,
+            "due_date": derive_due_date(task, business_date),
             "reminder_notes": render_template(template_lines, task),
         })
 

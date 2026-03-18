@@ -13,6 +13,7 @@ TZ = ZoneInfo('Asia/Shanghai')
 VALID_BUCKETS = ['today', 'tomorrow', 'future', 'archive']
 VALID_QUADRANTS = ['q1', 'q2', 'q3', 'q4']
 VALID_STATUSES = ['open', 'done', 'cancelled', 'archived']
+VALID_CATEGORIES = ['index', 'project', 'next_action', 'waiting_for', 'maybe']
 
 
 def now_dt():
@@ -47,6 +48,7 @@ def normalize_task(task):
     task.setdefault('quadrant', 'q2')
     task.setdefault('tags', [])
     task.setdefault('note', '')
+    task.setdefault('category', infer_category(task))
     task.setdefault('source', 'manual')
     task.setdefault('source_task_id', None)
     task.setdefault('sync_version', 1)
@@ -64,6 +66,34 @@ def save_data(data):
     with open(DATA, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
         f.write('\n')
+
+
+def infer_category(task):
+    category = task.get('category')
+    if category in VALID_CATEGORIES:
+        return category
+
+    tags = set(task.get('tags', []) or [])
+    title = (task.get('title') or '')
+    note = (task.get('note') or '')
+    text = f"{title} {note}"
+    bucket = task.get('bucket')
+
+    waiting_keywords = ['等待', '确认', '回复', '回信', '跟进', '反馈', '催']
+    project_keywords = ['项目', '规划', '方案', '系统', '搭建', '优化', '升级']
+    action_keywords = ['给', '整理', '安排', '确认', '发送', '沟通', '推进', '处理']
+
+    if tags & {'WAIT', 'FOLLOWUP', 'FOLLOW_UP'}:
+        return 'waiting_for'
+    if any(keyword in text for keyword in waiting_keywords):
+        return 'waiting_for'
+    if bucket == 'future':
+        return 'maybe'
+    if any(keyword in text for keyword in project_keywords):
+        return 'project'
+    if tags & {'ME'} or any(keyword in text for keyword in action_keywords):
+        return 'next_action'
+    return 'index'
 
 
 def next_id(tasks):
@@ -137,6 +167,7 @@ def format_task(task, verbose=False):
     note = task.get('note') or '-'
     return (
         f"{base}\n"
+        f"  category={task.get('category', '-') }\n"
         f"  tags={tags}\n"
         f"  note={note}\n"
         f"  updated_at={task.get('updated_at')}\n"
@@ -154,6 +185,7 @@ def cmd_add(args):
         'quadrant': args.quadrant,
         'tags': sorted(set(args.tags or [])),
         'note': args.note or '',
+        'category': args.category or None,
         'source': 'cli',
         'created_at': now_iso(),
         'updated_at': now_iso(),
@@ -176,6 +208,8 @@ def cmd_update(args):
         task['quadrant'] = args.quadrant
     if args.note is not None:
         task['note'] = args.note
+    if args.category is not None:
+        task['category'] = args.category
     if args.status is not None:
         set_status(task, args.status)
     if args.set_tags is not None:
@@ -268,6 +302,7 @@ def build_parser():
     p.add_argument('--quadrant', default='q2', choices=VALID_QUADRANTS)
     p.add_argument('--note')
     p.add_argument('--tags', nargs='*')
+    p.add_argument('--category', choices=VALID_CATEGORIES)
     p.set_defaults(func=cmd_add)
 
     p = sub.add_parser('update')
@@ -276,6 +311,7 @@ def build_parser():
     p.add_argument('--bucket', choices=VALID_BUCKETS)
     p.add_argument('--quadrant', choices=VALID_QUADRANTS)
     p.add_argument('--note')
+    p.add_argument('--category', choices=VALID_CATEGORIES)
     p.add_argument('--status', choices=VALID_STATUSES)
     p.add_argument('--set-tags', nargs='*')
     p.add_argument('--add-tags', nargs='*')
