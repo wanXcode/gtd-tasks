@@ -13,6 +13,7 @@ TASK_CLI = ROOT / 'scripts' / 'task_cli.py'
 TZ = ZoneInfo('Asia/Shanghai')
 DEFAULT_BUCKET = 'future'
 DEFAULT_QUADRANT = 'q2'
+DEFAULT_CATEGORY = 'index'
 BUCKET_KEYWORDS = [
     ('today', ['今天', '今日', '今晚', '今晚上', '今天内', '今天处理', '今天做']),
     ('tomorrow', ['明天', '明日', '明早', '明晚', '明天下午', '明天上午']),
@@ -36,6 +37,12 @@ STOP_PREFIXES = [
     '提醒我', '帮我', '记得', '记一下', '记录一下', '新增任务', '加个任务', '待办', 'todo', 'todo:', 'todo：'
 ]
 TRIM_TAILS = ['先放未来', '放未来', '记一下', '提醒我', '帮我', '这件事', '这个事情']
+CATEGORY_HINTS = {
+    'waiting_for': ['等确认', '等回复', '等待', '待确认', '待回复', '跟进', '催一下', '等对方'],
+    'project': ['项目', '规划', '方案', '系统', '版本', '升级', '搭建', '建设'],
+    'next_action': ['给', '整理', '发送', '沟通', '安排', '处理', '推进', '确认一下', '回信'],
+    'maybe': ['以后', '先放未来', '晚点', '有空再', '再说', '也许', '可能'],
+}
 
 
 def now_dt():
@@ -141,6 +148,24 @@ def derive_title(text: str):
     return title or clean_spaces(text)
 
 
+def detect_category(text: str, bucket: str, tags):
+    if any(tag in tags for tag in ['WAIT', 'FOLLOWUP', 'FOLLOW_UP']):
+        return 'waiting_for'
+    if any(hint in text for hint in CATEGORY_HINTS['waiting_for']):
+        return 'waiting_for'
+    if bucket == 'future' and any(hint in text for hint in CATEGORY_HINTS['maybe']):
+        return 'maybe'
+    if any(hint in text for hint in CATEGORY_HINTS['project']):
+        return 'project'
+    if any(tag in tags for tag in ['ME']):
+        return 'next_action'
+    if any(hint in text for hint in CATEGORY_HINTS['next_action']):
+        return 'next_action'
+    if bucket == 'future':
+        return 'maybe'
+    return DEFAULT_CATEGORY
+
+
 def build_preview(text: str, default_bucket: str, default_quadrant: str):
     raw = clean_spaces(text)
     bucket = detect_bucket(raw, default_bucket)
@@ -148,11 +173,13 @@ def build_preview(text: str, default_bucket: str, default_quadrant: str):
     quadrant = detect_quadrant(raw, bucket, default_quadrant)
     note = extract_note(raw)
     title = derive_title(raw)
+    category = detect_category(raw, bucket, tags)
     return {
         'input': raw,
         'title': title,
         'bucket': bucket,
         'quadrant': quadrant,
+        'category': category,
         'tags': tags,
         'note': note,
         'timezone': 'Asia/Shanghai',
@@ -173,6 +200,8 @@ def apply_capture(preview):
     ]
     if preview.get('note'):
         cmd += ['--note', preview['note']]
+    if preview.get('category'):
+        cmd += ['--category', preview['category']]
     if preview.get('tags'):
         cmd += ['--tags', *preview['tags']]
     completed = subprocess.run(cmd, check=True, capture_output=True, text=True)

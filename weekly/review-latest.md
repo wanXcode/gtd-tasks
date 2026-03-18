@@ -16,6 +16,14 @@
 - tomorrow: 3
 - future: 5
 
+## 当前待办分类
+
+- 收集箱@inbox: 11
+- 项目@project: 0
+- 下一步行动@NextAction: 0
+- 等待@Waiting For: 0
+- 可能的事@Maybe: 0
+
 ## 本周新增
 
 - 整理发布 v0.2.2 | open | future | q2 | tags=ME | note=补 release 文档

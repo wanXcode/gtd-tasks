@@ -8,6 +8,14 @@ ROOT = Path('/root/.openclaw/workspace/gtd-tasks')
 DATA = ROOT / 'data' / 'tasks.json'
 TZ = ZoneInfo('Asia/Shanghai')
 WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+CATEGORY_LABELS = {
+    'index': '收集箱@inbox',
+    'project': '项目@project',
+    'next_action': '下一步行动@NextAction',
+    'waiting_for': '等待@Waiting For',
+    'maybe': '可能的事@Maybe',
+}
+CATEGORY_ORDER = ['index', 'project', 'next_action', 'waiting_for', 'maybe']
 
 
 def load_data():
@@ -65,6 +73,10 @@ def by_bucket(tasks, bucket):
     return [t for t in tasks if t.get('status') == 'open' and t.get('bucket') == bucket]
 
 
+def by_category(tasks, category):
+    return [t for t in tasks if t.get('status') == 'open' and t.get('category', 'index') == category]
+
+
 def done_tasks(tasks):
     items = [t for t in tasks if t.get('status') in ('done', 'cancelled', 'archived')]
     return sorted(items, key=lambda x: x.get('completed_at') or x.get('updated_at') or '', reverse=True)
@@ -76,7 +88,6 @@ def render_today(data):
     bd = meta.get('business_date') or datetime.now(TZ).strftime('%Y-%m-%d')
     today = by_bucket(tasks, 'today')
     tomorrow = by_bucket(tasks, 'tomorrow')
-    future = by_bucket(tasks, 'future')
     lines = [
         '# 今日待办 Today',
         '',
@@ -93,40 +104,37 @@ def render_today(data):
     lines += [task_line(t, '•') for t in today] or ['（暂无）']
     lines += ['', '【明日】']
     lines += [task_line(t, '•') for t in tomorrow] or ['（暂无）']
-    lines += ['', '【未来】']
-    lines += [task_line(t, '•') for t in future] or ['（暂无）']
+    lines += ['', '【当前分类概览】']
+    for category in CATEGORY_ORDER:
+        items = by_category(tasks, category)
+        lines += [f"- {CATEGORY_LABELS[category]}：{len(items)} 项"]
     lines += [
         '',
         '【提醒】',
-        '优先处理今日事项；明日项提前预判，未来项按节奏推进。',
+        '默认先按 5 类 GTD 分类管理；today / tomorrow 只保留时间语义，不再作为主分类体系。',
         '',
         '---',
         '',
-        '*说明：本文件中的“今日 / 明日 / 未来”一律按北京时间（UTC+8）解释；手动查看与定时推送使用同一模板骨架。*',
+        '*说明：本文件中的“今日 / 明日”一律按北京时间（UTC+8）解释；本机 GTD 主分类统一为 5 类。*',
     ]
     return '\n'.join(lines) + '\n'
 
 
 def render_inbox(data):
     tasks = data['tasks']
-    today = by_bucket(tasks, 'today')
-    tomorrow = by_bucket(tasks, 'tomorrow')
-    future = by_bucket(tasks, 'future')
     done = done_tasks(tasks)
     lines = [
-        '# 收集箱 Inbox',
+        '# GTD 分类总览',
         '',
-        '新事项先放在这里，后续按“今日 / 明日 / 未来”维护，不再单独保留“待处理”。',
-        '',
-        '## 今日',
+        '本机 GTD 默认按 5 类分类维护，和 Apple Reminders 保持一致。',
         '',
     ]
-    lines += [task_line(t, '·') for t in today] or ['（暂无）']
-    lines += ['', '## 明日', '']
-    lines += [task_line(t, '·') for t in tomorrow] or ['（暂无）']
-    lines += ['', '## 未来', '']
-    lines += [task_line(t, '·') for t in future] or ['（暂无）']
-    lines += ['', '<!-- 新事项自动添加在这里 -->', '', '## 已处理', '']
+    for category in CATEGORY_ORDER:
+        lines += [f"## {CATEGORY_LABELS[category]}", '']
+        items = by_category(tasks, category)
+        lines += [task_line(t, '·') for t in items] or ['（暂无）']
+        lines += ['']
+    lines += ['<!-- 新事项默认先进收集箱 -->', '', '## 已处理', '']
     lines += [task_line(t, '·') for t in done] or ['（暂无）']
     return '\n'.join(lines) + '\n'
 
@@ -176,6 +184,10 @@ def render_weekly_review(data):
         bucket: len([t for t in open_tasks if t.get('bucket') == bucket])
         for bucket in ['today', 'tomorrow', 'future', 'archive']
     }
+    by_category_counts = {
+        category: len([t for t in open_tasks if t.get('category', 'index') == category])
+        for category in CATEGORY_ORDER
+    }
     lines = [
         '# Weekly Review',
         '',
@@ -194,6 +206,14 @@ def render_weekly_review(data):
         f"- today: {by_bucket_counts['today']}",
         f"- tomorrow: {by_bucket_counts['tomorrow']}",
         f"- future: {by_bucket_counts['future']}",
+        '',
+        '## 当前待办分类',
+        '',
+        f"- 收集箱@inbox: {by_category_counts['index']}",
+        f"- 项目@project: {by_category_counts['project']}",
+        f"- 下一步行动@NextAction: {by_category_counts['next_action']}",
+        f"- 等待@Waiting For: {by_category_counts['waiting_for']}",
+        f"- 可能的事@Maybe: {by_category_counts['maybe']}",
         '',
         '## 本周新增',
         '',

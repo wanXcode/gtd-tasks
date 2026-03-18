@@ -148,6 +148,8 @@ def apply_filters(tasks, args):
         items = [t for t in items if t.get('bucket') == args.bucket]
     if getattr(args, 'quadrant', None):
         items = [t for t in items if t.get('quadrant') == args.quadrant]
+    if getattr(args, 'category', None):
+        items = [t for t in items if t.get('category') == args.category]
     if getattr(args, 'tag', None):
         items = [t for t in items if args.tag in t.get('tags', [])]
     if getattr(args, 'text', None):
@@ -160,7 +162,7 @@ def apply_filters(tasks, args):
 
 
 def format_task(task, verbose=False):
-    base = f"{task['id']} | {task['status']} | {task['bucket']} | {task['quadrant']} | {task['title']}"
+    base = f"{task['id']} | {task['status']} | {task.get('category', '-')} | {task['bucket']} | {task['quadrant']} | {task['title']}"
     if not verbose:
         return base
     tags = ','.join(task.get('tags', [])) or '-'
@@ -249,7 +251,8 @@ def cmd_reopen(args):
 def cmd_list(args):
     data = load_data()
     tasks = apply_filters(data['tasks'], args)
-    tasks = sorted(tasks, key=lambda t: (t.get('status') != 'open', t.get('bucket', ''), t.get('id', '')))
+    category_order = {name: idx for idx, name in enumerate(VALID_CATEGORIES)}
+    tasks = sorted(tasks, key=lambda t: (t.get('status') != 'open', category_order.get(t.get('category', 'index'), 99), t.get('bucket', ''), t.get('id', '')))
     if args.limit:
         tasks = tasks[:args.limit]
     for t in tasks:
@@ -332,6 +335,7 @@ def build_parser():
     p.add_argument('--status', choices=VALID_STATUSES)
     p.add_argument('--bucket', choices=VALID_BUCKETS)
     p.add_argument('--quadrant', choices=VALID_QUADRANTS)
+    p.add_argument('--category', choices=VALID_CATEGORIES)
     p.add_argument('--tag')
     p.add_argument('--text')
     p.add_argument('--limit', type=int)
@@ -343,6 +347,7 @@ def build_parser():
     p.add_argument('--status', choices=VALID_STATUSES)
     p.add_argument('--bucket', choices=VALID_BUCKETS)
     p.add_argument('--quadrant', choices=VALID_QUADRANTS)
+    p.add_argument('--category', choices=VALID_CATEGORIES)
     p.add_argument('--tag')
     p.add_argument('--text')
     p.add_argument('--to-bucket', required=True, choices=VALID_BUCKETS)
@@ -355,6 +360,7 @@ def build_parser():
     p.add_argument('--status', choices=VALID_STATUSES)
     p.add_argument('--bucket', choices=VALID_BUCKETS)
     p.add_argument('--quadrant', choices=VALID_QUADRANTS)
+    p.add_argument('--category', choices=VALID_CATEGORIES)
     p.add_argument('--tag')
     p.add_argument('--text')
     p.set_defaults(func=cmd_tag)

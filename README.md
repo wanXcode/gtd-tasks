@@ -40,7 +40,9 @@
 - `data/tasks.json` 是唯一事实源
 - Markdown 文件全部由脚本自动生成
 - “今天 / 明天 / 下周 / 未来” 等时间判断固定按北京时间
-- 默认任务字段里，`bucket=future`、`quadrant=q2`
+- 主分类体系统一为 5 类：`index / project / next_action / waiting_for / maybe`
+- `bucket` 只保留时间语义（today / tomorrow / future），不再作为主分类体系
+- 默认任务字段里，`category=index`、`bucket=future`、`quadrant=q2`
 
 ## CLI：结构化任务操作
 
@@ -55,10 +57,11 @@ python3 scripts/task_cli.py list --help
 
 ```bash
 python3 scripts/task_cli.py add "给张闯回信"
-python3 scripts/task_cli.py add "整理财务方案" --bucket today --quadrant q1 --tags ME FIN --note "今晚过一遍"
+python3 scripts/task_cli.py add "整理财务方案" --category next_action --bucket today --quadrant q1 --tags ME FIN --note "今晚过一遍"
+python3 scripts/task_cli.py add "季度复盘项目" --category project
 ```
 
-默认 bucket 现在是 `future`，这样更符合“先收进去，再决定今天/明天”的节奏。
+默认分类现在是 `category=index`，也就是先进入收集箱；默认 `bucket=future`，保留“先收进去，再决定今天/明天”的节奏。
 
 ### 列表查询
 
@@ -73,6 +76,7 @@ python3 scripts/task_cli.py list --text 规划 --verbose --limit 10
 
 - `--id`
 - `--status`
+- `--category`
 - `--bucket`
 - `--quadrant`
 - `--tag`
@@ -114,6 +118,7 @@ python3 scripts/nlp_capture.py "把海南公司主体先放未来，等确认后
 默认模式是 `preview`，会输出：
 
 - `title`
+- `category`
 - `bucket`
 - `quadrant`
 - `tags`
@@ -135,7 +140,8 @@ python3 scripts/nlp_capture.py "明天提醒我给张闯回信 #ME" --mode apply
 
 ### 当前支持的轻量规则
 
-- bucket：识别 `今天 / 明天 / 下周 / 以后 / 先放未来` 等
+- category：优先识别 `waiting_for / project / next_action / maybe / index`
+- bucket：识别 `今天 / 明天 / 下周 / 以后 / 先放未来` 等时间语义
 - tags：识别显式标签（如 `#ME`）和少量中文表达（如“我来处理”“等确认”）
 - note：从“备注/说明/note”或少量提示短语里提取
 - quadrant：识别 `#Q1~#Q4` 及少量中文表达，否则默认 `q2`
