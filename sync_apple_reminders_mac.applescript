@@ -26,10 +26,16 @@ on run argv
 					set dueDateText to item 5 of parts
 					set reminderBody to my replaceText(" ", linefeed, reminderBody)
 					
-					if not (exists list listName) then
-						make new list with properties {name:listName}
+					set targetList to missing value
+					repeat with existingList in lists
+						if (name of existingList) is listName then
+							set targetList to existingList
+							exit repeat
+						end if
+					end repeat
+					if targetList is missing value then
+						set targetList to make new list with properties {name:listName}
 					end if
-					set targetList to list listName
 					
 					set existingReminder to missing value
 					repeat with r in reminders of targetList
