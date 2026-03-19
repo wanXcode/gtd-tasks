@@ -17,6 +17,7 @@ MAPPING_PATH = ROOT / 'config' / 'apple_reminders_mapping.json'
 EXPORT_PATH = SYNC_DIR / 'apple-reminders-export.json'
 TMP_EXPORT_DIR = SYNC_DIR / 'tmp'
 STATE_PATH = SYNC_DIR / 'apple-reminders-sync-state.json'
+LOCAL_MAP_PATH = SYNC_DIR / 'apple-reminders-local-map.json'
 DEFAULT_LOG_PATH = LOG_DIR / 'apple-reminders-sync.log'
 EXPORT_SCRIPT = ROOT / 'scripts' / 'export_apple_reminders_sync.py'
 MAC_SCRIPT = ROOT / 'sync_apple_reminders_mac.applescript'
@@ -24,6 +25,7 @@ TZ = ZoneInfo('Asia/Shanghai')
 GIT_SYNC_ALLOWED_PATHS = [
     Path('sync/apple-reminders-export.json'),
     Path('sync/apple-reminders-sync-state.json'),
+    Path('sync/apple-reminders-local-map.json'),
 ]
 
 SYNC_ENV_FLAG = 'GTD_APPLE_REMINDERS_AUTO_PUSH'

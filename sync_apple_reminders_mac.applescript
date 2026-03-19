@@ -7,11 +7,13 @@ use scripting additions
 on run argv
 	if (count of argv) is 0 then error "Missing export json path"
 	set jsonPath to item 1 of argv
+	set localMapPath to "/root/.openclaw/workspace/gtd-tasks/sync/apple-reminders-local-map.json"
 	set rows to my loadRows(jsonPath)
 	set createdCount to 0
 	set updatedCount to 0
 	set movedCount to 0
 	set dueAppliedCount to 0
+	set localMapRows to {}
 
 	tell application "Reminders"
 		repeat with rowText in rows
@@ -26,7 +28,7 @@ on run argv
 					set existingListName to item 6 of parts
 					set syncAction to item 7 of parts
 
-					set foundData to my findReminderAnywhere(gtdId, reminderTitle)
+					set foundData to my findReminderAnywhere(gtdId, listName, reminderTitle)
 					set reminderRef to item 1 of foundData
 					set foundListName to item 2 of foundData
 
@@ -64,12 +66,14 @@ on run argv
 						if my applyDueDate(reminderRef, dueDateText) then
 							set dueAppliedCount to dueAppliedCount + 1
 						end if
+						set end of localMapRows to my buildLocalMapRow(gtdId, listName, reminderTitle)
 					end if
 				end if
 			end if
 		end repeat
 	end tell
-	return "OK created=" & createdCount & " updated=" & updatedCount & " moved=" & movedCount & " due=" & dueAppliedCount
+	my writeLocalMap(localMapPath, localMapRows)
+	return "OK created=" & createdCount & " updated=" & updatedCount & " moved=" & movedCount & " due=" & dueAppliedCount & " mapped=" & (count of localMapRows)
 end run
 
 on loadRows(jsonPath)
@@ -94,7 +98,7 @@ on ensureListByName(listName)
 	end tell
 end ensureListByName
 
-on findReminderAnywhere(gtdId, reminderTitle)
+on findReminderAnywhere(gtdId, targetListName, reminderTitle)
 	tell application "Reminders"
 		repeat with oneList in every list
 			repeat with oneReminder in every reminder of oneList
@@ -107,6 +111,17 @@ on findReminderAnywhere(gtdId, reminderTitle)
 			end repeat
 		end repeat
 
+		if targetListName is not "" and reminderTitle is not "" then
+			try
+				set targetListRef to list targetListName
+				repeat with oneReminder in every reminder of targetListRef
+					if (name of oneReminder as text) is reminderTitle then return {oneReminder, targetListName}
+				end repeat
+			on error
+				-- ignore missing list
+			end try
+		end if
+
 		if reminderTitle is not "" then
 			repeat with oneList in every list
 				repeat with oneReminder in every reminder of oneList
@@ -117,6 +132,20 @@ on findReminderAnywhere(gtdId, reminderTitle)
 	end tell
 	return {missing value, ""}
 end findReminderAnywhere
+
+on buildLocalMapRow(gtdId, listName, reminderTitle)
+	set matchKey to listName & "\n" & reminderTitle
+	return gtdId & tab & listName & tab & reminderTitle & tab & matchKey
+end buildLocalMapRow
+
+on writeLocalMap(localMapPath, rows)
+	set pythonCmd to "/usr/bin/python3 - <<'PY' " & quoted form of localMapPath & "\nimport json, sys\nout = sys.argv[1]\nentries = []\nseen = set()\nfor raw in sys.stdin.read().splitlines():\n    if not raw.strip():\n        continue\n    parts = raw.split('\\t')\n    if len(parts) < 4:\n        continue\n    gtd_id, list_name, title, match_key = parts[:4]\n    dedup_key = (gtd_id, match_key)\n    if dedup_key in seen:\n        continue\n    seen.add(dedup_key)\n    entries.append({\n        'gtd_id': gtd_id,\n        'list_name': list_name,\n        'title': title,\n        'match_key': match_key,\n    })\nwith open(out, 'w', encoding='utf-8') as f:\n    json.dump({\n        'version': '0.4.0-phase1-local-map',\n        'generated_at': None,\n        'match_strategy': 'list_name+title',\n        'entries': entries,\n    }, f, ensure_ascii=False, indent=2)\n    f.write('\\n')\nPY"
+	set payload to ""
+	repeat with rowText in rows
+		set payload to payload & rowText & linefeed
+	end repeat
+	do shell script "mkdir -p " & quoted form of POSIX path of (do shell script "dirname " & quoted form of localMapPath) & " && printf %s " & quoted form of payload & " | " & pythonCmd
+end writeLocalMap
 
 on applyDueDate(targetReminder, dueDateText)
 	if dueDateText is "" then return false
