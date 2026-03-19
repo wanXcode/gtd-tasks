@@ -7,7 +7,8 @@ use scripting additions
 on run argv
 	if (count of argv) is 0 then error "Missing export json path"
 	set jsonPath to item 1 of argv
-	set localMapPath to "/root/.openclaw/workspace/gtd-tasks/sync/apple-reminders-local-map.json"
+	set repoRoot to do shell script "cd " & quoted form of POSIX path of ((path to me as text)) & "/.. && pwd"
+	set localMapPath to repoRoot & "/sync/apple-reminders-local-map.json"
 	set rows to my loadRows(jsonPath)
 	set createdCount to 0
 	set updatedCount to 0
@@ -19,7 +20,7 @@ on run argv
 		repeat with rowText in rows
 			if rowText is not "" then
 				set parts to my splitByTab(rowText as text)
-				if (count of parts) ≥ 7 then
+				if (count of parts) >= 7 then
 					set gtdId to item 1 of parts
 					set listName to item 2 of parts
 					set reminderTitle to item 3 of parts

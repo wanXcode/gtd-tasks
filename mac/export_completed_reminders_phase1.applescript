@@ -11,10 +11,11 @@ use scripting additions
 on run argv
 	if (count of argv) is 0 then error "Missing output json path"
 	set outputPath to item 1 of argv
-	if (count of argv) ≥ 2 then
+	set repoRoot to do shell script "cd " & quoted form of POSIX path of ((path to me as text)) & "/../.. && pwd"
+	if (count of argv) >= 2 then
 		set localMapPath to item 2 of argv
 	else
-		set localMapPath to "/root/.openclaw/workspace/gtd-tasks/sync/apple-reminders-local-map.json"
+		set localMapPath to repoRoot & "/sync/apple-reminders-local-map.json"
 	end if
 	set rows to {}
 	
