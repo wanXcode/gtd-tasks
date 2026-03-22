@@ -1,7 +1,7 @@
 {
   "version": "0.3.1",
   "timezone": "Asia/Shanghai",
-  "generated_at": "2026-03-23T01:02:36.140072+08:00",
+  "generated_at": "2026-03-23T01:14:08.746446+08:00",
   "source": {
     "tasks_file": "data/tasks.json",
     "mapping_file": "config/apple_reminders_mapping.json",
@@ -13,13 +13,13 @@
   "lists": [
     {
       "id": "inbox",
-      "name": "收集箱@inbox",
+      "name": "收集箱@Inbox",
       "status": "active",
       "notes": "默认收集入口，尚未澄清的事项先进入这里。"
     },
     {
       "id": "project",
-      "name": "项目@project",
+      "name": "项目@Project",
       "status": "active",
       "notes": "需要多步推进、需要持续管理的项目。"
     },
@@ -175,7 +175,7 @@
       "completed": false,
       "completed_at": null,
       "deleted_at": null,
-      "target_list": "项目@project",
+      "target_list": "项目@Project",
       "target_list_id": "project",
       "target_list_status": "active",
       "matched_rule_id": "category_project",
@@ -248,7 +248,7 @@
       "completed": false,
       "completed_at": null,
       "deleted_at": null,
-      "target_list": "项目@project",
+      "target_list": "项目@Project",
       "target_list_id": "project",
       "target_list_status": "active",
       "matched_rule_id": "category_project",
@@ -536,11 +536,11 @@
       "completed": false,
       "completed_at": null,
       "deleted_at": null,
-      "target_list": "收集箱@inbox",
+      "target_list": "收集箱@Inbox",
       "target_list_id": "inbox",
       "target_list_status": "active",
-      "matched_rule_id": "category_index",
-      "matched_rule_name": "任务已显式标记 index",
+      "matched_rule_id": "category_inbox",
+      "matched_rule_name": "任务已显式标记 inbox",
       "due_date": null,
       "reminder_notes": "联调用：验证 GTD -> Apple 新增同步"
     }

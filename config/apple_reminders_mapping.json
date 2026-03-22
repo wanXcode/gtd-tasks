@@ -24,13 +24,13 @@
   "lists": [
     {
       "id": "inbox",
-      "name": "收集箱@inbox",
+      "name": "收集箱@Inbox",
       "status": "active",
       "notes": "默认收集入口，尚未澄清的事项先进入这里。"
     },
     {
       "id": "project",
-      "name": "项目@project",
+      "name": "项目@Project",
       "status": "active",
       "notes": "需要多步推进、需要持续管理的项目。"
     },
@@ -135,8 +135,8 @@
       ]
     },
     {
-      "id": "category_index",
-      "name": "任务已显式标记 index",
+      "id": "category_inbox",
+      "name": "任务已显式标记 inbox",
       "priority": 116,
       "target_list_id": "inbox",
       "all": [
