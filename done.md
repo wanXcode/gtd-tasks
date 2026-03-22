@@ -2,14 +2,15 @@
 
 由主库自动生成，方便集中查看最近完成 / 取消 / 归档事项。
 
-生成时间：2026-03-23 01:02:36 CST
+生成时间：2026-03-23 01:38:02 CST
 
-已完成：12 项
+已完成：13 项
 已取消：0 项
 已归档：0 项
 
 ## 最近完成
 
+- 联调测试A-新增到Apple | done | archive | q2 | tags=- | note=联调用：验证 GTD -> Apple 新增同步
 - 技术中台年度规划确认 | done | today | q1 | tags=- | note=-
 - 人事年度规划确认 | done | tomorrow | q1 | tags=- | note=-
 - 稳定化验证任务 D | done | archive | q2 | tags=- | note=-
