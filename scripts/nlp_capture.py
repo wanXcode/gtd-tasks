@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-ROOT = Path('/root/.openclaw/workspace/gtd-tasks')
+ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 
 from apple_reminders_sync_lib import maybe_auto_push, setup_logger  # noqa: E402

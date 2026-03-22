@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-ROOT = Path('/root/.openclaw/workspace/gtd-tasks')
+ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / 'data' / 'tasks.json'
 TZ = ZoneInfo('Asia/Shanghai')
 WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']

@@ -4,7 +4,7 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path('/root/.openclaw/workspace/gtd-tasks')
+ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 
 from apple_reminders_sync_lib import (  # noqa: E402

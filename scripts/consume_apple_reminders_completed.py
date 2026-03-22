@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 from zoneinfo import ZoneInfo
 
-ROOT = Path('/root/.openclaw/workspace/gtd-tasks')
+ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = ROOT / 'data' / 'tasks.json'
 EVENTS_PATH = ROOT / 'sync' / 'apple-reminders-completed-events.json'
 APPLIED_LOG_PATH = ROOT / 'sync' / 'apple-reminders-completed-applied.json'

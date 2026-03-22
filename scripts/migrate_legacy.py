@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-ROOT = Path('/root/.openclaw/workspace/gtd-tasks')
+ROOT = Path(__file__).resolve().parent.parent
 MAIN_DATA = ROOT / 'data' / 'tasks.json'
 WIFE_DATA = ROOT / 'users' / 'wife' / 'data' / 'tasks.json'
 

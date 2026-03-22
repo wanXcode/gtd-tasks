@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 from zoneinfo import ZoneInfo
 
-ROOT = Path('/root/.openclaw/workspace/gtd-tasks')
+ROOT = Path(__file__).resolve().parent.parent
 SYNC_DIR = ROOT / 'sync'
 LOG_DIR = ROOT / 'logs'
 TASKS_PATH = ROOT / 'data' / 'tasks.json'
