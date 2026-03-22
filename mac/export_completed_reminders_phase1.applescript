@@ -49,7 +49,7 @@ on safeCompletionDate(oneReminder)
     try
         set completedDate to completion date of oneReminder
         if completedDate is missing value then error "missing completion date"
-        return do shell script "python3 - <<'PY'\nimport datetime\nimport sys\nraw = sys.stdin.read().strip()\nprint(raw)\nPY" with input (completedDate as text)
+        return (completedDate as text)
     on error
         return do shell script "date -u +%Y-%m-%dT%H:%M:%SZ"
     end try
