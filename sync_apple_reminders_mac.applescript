@@ -93,41 +93,49 @@ end splitByTab
 
 on ensureListByName(listName)
 	tell application "Reminders"
-		repeat with oneList in every list
-			if (name of oneList as text) is listName then return oneList
-		end repeat
+		if (exists list listName) then
+			return list listName
+		end if
 		return (make new list with properties {name:listName})
 	end tell
 end ensureListByName
 
 on findReminderAnywhere(gtdId, targetListName, reminderTitle)
 	tell application "Reminders"
-		repeat with oneList in every list
-			repeat with oneReminder in every reminder of oneList
+		set allLists to every list
+		repeat with oneList in allLists
+			set listNameText to name of oneList as text
+			set reminderItems to every reminder of oneList
+			repeat with oneReminder in reminderItems
 				try
 					set bodyText to body of oneReminder as text
 				on error
 					set bodyText to ""
 				end try
-				if gtdId is not "" and bodyText contains ("[GTD_ID] " & gtdId) then return {oneReminder, name of oneList as text}
+				if gtdId is not "" and bodyText contains ("[GTD_ID] " & gtdId) then return {contents of oneReminder, listNameText}
 			end repeat
 		end repeat
 
 		if targetListName is not "" and reminderTitle is not "" then
 			try
-				set targetListRef to list targetListName
-				repeat with oneReminder in every reminder of targetListRef
-					if (name of oneReminder as text) is reminderTitle then return {oneReminder, targetListName}
-				end repeat
+				if exists list targetListName then
+					set targetListRef to list targetListName
+					set reminderItems to every reminder of targetListRef
+					repeat with oneReminder in reminderItems
+						if (name of oneReminder as text) is reminderTitle then return {contents of oneReminder, targetListName}
+					end repeat
+				end if
 			on error
 				-- ignore missing list
 			end try
 		end if
 
 		if reminderTitle is not "" then
-			repeat with oneList in every list
-				repeat with oneReminder in every reminder of oneList
-					if (name of oneReminder as text) is reminderTitle then return {oneReminder, name of oneList as text}
+			repeat with oneList in allLists
+				set listNameText to name of oneList as text
+				set reminderItems to every reminder of oneList
+				repeat with oneReminder in reminderItems
+					if (name of oneReminder as text) is reminderTitle then return {contents of oneReminder, listNameText}
 				end repeat
 			end repeat
 		end if
