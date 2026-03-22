@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 DEFAULT_EXPORT_PATH="$REPO_ROOT/sync/apple-reminders-export.json"
+DEFAULT_TMP_EXPORT_DIR="$REPO_ROOT/sync/tmp"
 DEFAULT_APPLESCRIPT_PATH="$REPO_ROOT/sync_apple_reminders_mac.applescript"
 DEFAULT_LOG_DIR="$REPO_ROOT/logs"
 DEFAULT_STDOUT_LOG="$DEFAULT_LOG_DIR/apple-reminders-launchd.out.log"
@@ -11,6 +12,7 @@ DEFAULT_STDERR_LOG="$DEFAULT_LOG_DIR/apple-reminders-launchd.err.log"
 DEFAULT_RUNTIME_STATE_PATH="$REPO_ROOT/sync/apple-reminders-mac-runtime-state.json"
 
 EXPORT_PATH="${1:-${GTD_APPLE_REMINDERS_EXPORT_PATH:-$DEFAULT_EXPORT_PATH}}"
+SINGLE_TASK_ID="${GTD_APPLE_REMINDERS_TASK_ID:-}"
 APPLESCRIPT_PATH="${GTD_APPLE_REMINDERS_APPLESCRIPT_PATH:-$DEFAULT_APPLESCRIPT_PATH}"
 LOG_DIR="${GTD_APPLE_REMINDERS_LOG_DIR:-$DEFAULT_LOG_DIR}"
 RUN_LOG="$LOG_DIR/apple-reminders-sync-mac.log"
@@ -207,6 +209,13 @@ fi
 
 PREVIOUS_GENERATED_AT="$(read_last_consumed_generated_at)"
 maybe_git_pull
+
+if [[ -n "$SINGLE_TASK_ID" ]]; then
+  mkdir -p "$DEFAULT_TMP_EXPORT_DIR"
+  EXPORT_PATH="$DEFAULT_TMP_EXPORT_DIR/apple-reminders-task-${SINGLE_TASK_ID}.json"
+  log "export: building single-task payload for $SINGLE_TASK_ID -> $EXPORT_PATH"
+  "$PYTHON_BIN" "$REPO_ROOT/scripts/sync_apple_reminders.py" --mode export --task-id "$SINGLE_TASK_ID" --output "$EXPORT_PATH" >/dev/null
+fi
 
 if [[ ! -f "$EXPORT_PATH" ]]; then
   log "error: export json not found: $EXPORT_PATH"
