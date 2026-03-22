@@ -3,7 +3,7 @@
   "meta": {
     "timezone": "Asia/Shanghai",
     "business_date": "2026-03-23",
-    "updated_at": "2026-03-23T01:38:02+08:00"
+    "updated_at": "2026-03-23T01:45:47+08:00"
   },
   "tasks": [
     {
@@ -387,6 +387,24 @@
       "completed_at": "2026-03-23T01:38:02+08:00",
       "source_task_id": null,
       "sync_version": 2,
+      "deleted_at": null,
+      "last_synced_at": null
+    },
+    {
+      "id": "tsk_20260323_002",
+      "title": "联调测试B-Apple勾选回传",
+      "status": "open",
+      "bucket": "future",
+      "quadrant": "q2",
+      "tags": [],
+      "note": "联调用：验证 Apple completed -> GTD done 回传",
+      "category": "inbox",
+      "source": "cli",
+      "created_at": "2026-03-23T01:45:47+08:00",
+      "updated_at": "2026-03-23T01:45:47+08:00",
+      "completed_at": null,
+      "source_task_id": null,
+      "sync_version": 1,
       "deleted_at": null,
       "last_synced_at": null
     }

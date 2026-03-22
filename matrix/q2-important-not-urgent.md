@@ -9,6 +9,7 @@
 - [ ] #ME 给张闯写回信 👤
 - [ ] #ME 确定新加坡EP安排 👤
 - [ ] #ME 整理资产和财务情况 👤
+- [ ] 联调测试B-Apple勾选回传 — 联调用：验证 Apple completed -> GTD done 回传
 
 ## 已完成
 

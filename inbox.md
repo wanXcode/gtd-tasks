@@ -4,7 +4,7 @@
 
 ## 收集箱@inbox
 
-（暂无）
+· 联调测试B-Apple勾选回传 — 联调用：验证 Apple completed -> GTD done 回传
 
 ## 项目@project
 
