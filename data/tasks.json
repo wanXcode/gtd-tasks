@@ -3,21 +3,21 @@
   "meta": {
     "timezone": "Asia/Shanghai",
     "business_date": "2026-03-19",
-    "updated_at": "2026-03-19T03:48:33+08:00"
+    "updated_at": "2026-03-22T09:27:36+08:00"
   },
   "tasks": [
     {
       "id": "tsk_20260317_001",
       "title": "技术中台年度规划确认",
-      "status": "open",
+      "status": "done",
       "bucket": "today",
       "quadrant": "q1",
       "tags": [],
       "note": "",
       "source": "manual",
       "created_at": "2026-03-17T00:00:00+08:00",
-      "updated_at": "2026-03-17T00:00:00+08:00",
-      "completed_at": null,
+      "updated_at": "2026-03-22T09:27:36+08:00",
+      "completed_at": "2026-03-22T09:27:36+08:00",
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
@@ -63,15 +63,15 @@
     {
       "id": "tsk_20260317_004",
       "title": "人事年度规划确认",
-      "status": "open",
+      "status": "done",
       "bucket": "tomorrow",
       "quadrant": "q1",
       "tags": [],
       "note": "",
       "source": "manual",
       "created_at": "2026-03-17T00:00:00+08:00",
-      "updated_at": "2026-03-17T00:00:00+08:00",
-      "completed_at": null,
+      "updated_at": "2026-03-22T09:27:36+08:00",
+      "completed_at": "2026-03-22T09:27:36+08:00",
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
@@ -144,13 +144,13 @@
       "note": "",
       "source": "manual",
       "created_at": "2026-03-17T00:00:00+08:00",
-      "updated_at": "2026-03-17T00:00:00+08:00",
+      "updated_at": "2026-03-22T09:27:36+08:00",
       "completed_at": null,
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
       "last_synced_at": null,
-      "category": "waiting_for"
+      "category": "next_action"
     },
     {
       "id": "tsk_20260317_009",
@@ -164,13 +164,13 @@
       "note": "",
       "source": "manual",
       "created_at": "2026-03-17T00:00:00+08:00",
-      "updated_at": "2026-03-17T00:00:00+08:00",
+      "updated_at": "2026-03-22T09:27:36+08:00",
       "completed_at": null,
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
       "last_synced_at": null,
-      "category": "maybe"
+      "category": "project"
     },
     {
       "id": "tsk_20260317_010",
@@ -244,7 +244,7 @@
       "sync_version": 1,
       "deleted_at": null,
       "last_synced_at": null,
-      "category": "index"
+      "category": "inbox"
     },
     {
       "id": "tsk_20260317_014",
@@ -298,27 +298,79 @@
       "sync_version": 1,
       "deleted_at": null,
       "last_synced_at": null,
-      "category": "index"
+      "category": "inbox"
     },
     {
-      "id": "tsk_20260318_001",
-      "title": "整理发布 v0.2.2",
-      "status": "open",
-      "bucket": "future",
+      "id": "tsk_20260319_001",
+      "title": "同步底座自检任务",
+      "status": "done",
+      "bucket": "archive",
       "quadrant": "q2",
-      "tags": [
-        "ME"
-      ],
-      "note": "补 release 文档",
+      "tags": [],
+      "note": "自动同步自检-已更新",
+      "category": "next_action",
       "source": "cli",
-      "created_at": "2026-03-18T00:03:41+08:00",
-      "updated_at": "2026-03-18T00:09:26+08:00",
-      "completed_at": null,
+      "created_at": "2026-03-19T04:22:32+08:00",
+      "updated_at": "2026-03-19T04:22:32+08:00",
+      "completed_at": "2026-03-19T04:22:32+08:00",
       "source_task_id": null,
-      "sync_version": 6,
+      "sync_version": 3,
       "deleted_at": null,
-      "last_synced_at": null,
-      "category": "maybe"
+      "last_synced_at": null
+    },
+    {
+      "id": "tsk_20260319_002",
+      "title": "同步底座增量验证任务",
+      "status": "done",
+      "bucket": "archive",
+      "quadrant": "q2",
+      "tags": [],
+      "note": "changed-only 验证",
+      "category": "next_action",
+      "source": "cli",
+      "created_at": "2026-03-19T04:23:06+08:00",
+      "updated_at": "2026-03-19T04:23:07+08:00",
+      "completed_at": "2026-03-19T04:23:07+08:00",
+      "source_task_id": null,
+      "sync_version": 2,
+      "deleted_at": null,
+      "last_synced_at": null
+    },
+    {
+      "id": "tsk_20260319_010",
+      "title": "稳定化验证任务 C",
+      "status": "done",
+      "bucket": "archive",
+      "quadrant": "q2",
+      "tags": [],
+      "note": "",
+      "category": null,
+      "source": "cli",
+      "created_at": "2026-03-19T06:46:44+08:00",
+      "updated_at": "2026-03-19T07:09:02+08:00",
+      "completed_at": "2026-03-19T07:09:02+08:00",
+      "source_task_id": null,
+      "sync_version": 2,
+      "deleted_at": null,
+      "last_synced_at": null
+    },
+    {
+      "id": "tsk_20260319_011",
+      "title": "稳定化验证任务 D",
+      "status": "done",
+      "bucket": "archive",
+      "quadrant": "q2",
+      "tags": [],
+      "note": "",
+      "category": null,
+      "source": "cli",
+      "created_at": "2026-03-19T06:46:44+08:00",
+      "updated_at": "2026-03-19T09:07:33+08:00",
+      "completed_at": "2026-03-19T09:07:33+08:00",
+      "source_task_id": null,
+      "sync_version": 2,
+      "deleted_at": null,
+      "last_synced_at": null
     }
   ]
 }

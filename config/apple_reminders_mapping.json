@@ -5,8 +5,14 @@
   "classification_policy": {
     "source_of_truth": "gtd-tasks",
     "reminders_taxonomy_status": "confirmed",
-    "default_open_statuses": ["open"],
-    "excluded_statuses": ["done", "cancelled", "archived"],
+    "default_open_statuses": [
+      "open"
+    ],
+    "excluded_statuses": [
+      "done",
+      "cancelled",
+      "archived"
+    ],
     "rule_priority_order": [
       "manual_category_rules",
       "manual_tag_rules",
@@ -17,7 +23,7 @@
   },
   "lists": [
     {
-      "id": "index",
+      "id": "inbox",
       "name": "收集箱@inbox",
       "status": "active",
       "notes": "默认收集入口，尚未澄清的事项先进入这里。"
@@ -54,8 +60,18 @@
       "priority": 120,
       "target_list_id": "waiting_for",
       "all": [
-        { "field": "status", "operator": "in", "value": ["open"] },
-        { "field": "category", "operator": "equals", "value": "waiting_for" }
+        {
+          "field": "status",
+          "operator": "in",
+          "value": [
+            "open"
+          ]
+        },
+        {
+          "field": "category",
+          "operator": "equals",
+          "value": "waiting_for"
+        }
       ]
     },
     {
@@ -64,8 +80,18 @@
       "priority": 119,
       "target_list_id": "project",
       "all": [
-        { "field": "status", "operator": "in", "value": ["open"] },
-        { "field": "category", "operator": "equals", "value": "project" }
+        {
+          "field": "status",
+          "operator": "in",
+          "value": [
+            "open"
+          ]
+        },
+        {
+          "field": "category",
+          "operator": "equals",
+          "value": "project"
+        }
       ]
     },
     {
@@ -74,8 +100,18 @@
       "priority": 118,
       "target_list_id": "next_action",
       "all": [
-        { "field": "status", "operator": "in", "value": ["open"] },
-        { "field": "category", "operator": "equals", "value": "next_action" }
+        {
+          "field": "status",
+          "operator": "in",
+          "value": [
+            "open"
+          ]
+        },
+        {
+          "field": "category",
+          "operator": "equals",
+          "value": "next_action"
+        }
       ]
     },
     {
@@ -84,18 +120,38 @@
       "priority": 117,
       "target_list_id": "maybe",
       "all": [
-        { "field": "status", "operator": "in", "value": ["open"] },
-        { "field": "category", "operator": "equals", "value": "maybe" }
+        {
+          "field": "status",
+          "operator": "in",
+          "value": [
+            "open"
+          ]
+        },
+        {
+          "field": "category",
+          "operator": "equals",
+          "value": "maybe"
+        }
       ]
     },
     {
       "id": "category_index",
       "name": "任务已显式标记 index",
       "priority": 116,
-      "target_list_id": "index",
+      "target_list_id": "inbox",
       "all": [
-        { "field": "status", "operator": "in", "value": ["open"] },
-        { "field": "category", "operator": "equals", "value": "index" }
+        {
+          "field": "status",
+          "operator": "in",
+          "value": [
+            "open"
+          ]
+        },
+        {
+          "field": "category",
+          "operator": "equals",
+          "value": "inbox"
+        }
       ]
     },
     {
@@ -104,8 +160,22 @@
       "priority": 100,
       "target_list_id": "waiting_for",
       "all": [
-        { "field": "status", "operator": "in", "value": ["open"] },
-        { "field": "tags", "operator": "contains_any", "value": ["WAIT", "FOLLOWUP", "FOLLOW_UP"] }
+        {
+          "field": "status",
+          "operator": "in",
+          "value": [
+            "open"
+          ]
+        },
+        {
+          "field": "tags",
+          "operator": "contains_any",
+          "value": [
+            "WAIT",
+            "FOLLOWUP",
+            "FOLLOW_UP"
+          ]
+        }
       ]
     },
     {
@@ -114,11 +184,43 @@
       "priority": 90,
       "target_list_id": "waiting_for",
       "all": [
-        { "field": "status", "operator": "in", "value": ["open"] },
+        {
+          "field": "status",
+          "operator": "in",
+          "value": [
+            "open"
+          ]
+        },
         {
           "any": [
-            { "field": "title", "operator": "contains_any_text", "value": ["等待", "等", "确认", "回复", "回信", "跟进", "催", "反馈"] },
-            { "field": "note", "operator": "contains_any_text", "value": ["等待", "等", "确认", "回复", "回信", "跟进", "催", "反馈"] }
+            {
+              "field": "title",
+              "operator": "contains_any_text",
+              "value": [
+                "等待",
+                "等",
+                "确认",
+                "回复",
+                "回信",
+                "跟进",
+                "催",
+                "反馈"
+              ]
+            },
+            {
+              "field": "note",
+              "operator": "contains_any_text",
+              "value": [
+                "等待",
+                "等",
+                "确认",
+                "回复",
+                "回信",
+                "跟进",
+                "催",
+                "反馈"
+              ]
+            }
           ]
         }
       ]
@@ -129,24 +231,45 @@
       "priority": 70,
       "target_list_id": "maybe",
       "all": [
-        { "field": "status", "operator": "in", "value": ["open"] },
-        { "field": "bucket", "operator": "equals", "value": "future" }
+        {
+          "field": "status",
+          "operator": "in",
+          "value": [
+            "open"
+          ]
+        },
+        {
+          "field": "bucket",
+          "operator": "equals",
+          "value": "future"
+        }
       ]
     },
     {
       "id": "fallback_open_tasks",
       "name": "默认兜底：所有 open 任务进入收集箱",
       "priority": 10,
-      "target_list_id": "index",
+      "target_list_id": "inbox",
       "all": [
-        { "field": "status", "operator": "in", "value": ["open"] }
+        {
+          "field": "status",
+          "operator": "in",
+          "value": [
+            "open"
+          ]
+        }
       ]
     }
   ],
   "export": {
     "output_path": "sync/apple-reminders-export.json",
     "include_debug_fields": false,
-    "completion_statuses": ["done", "cancelled", "archived", "deleted"],
+    "completion_statuses": [
+      "done",
+      "cancelled",
+      "archived",
+      "deleted"
+    ],
     "note_template": [
       "{{note}}"
     ]

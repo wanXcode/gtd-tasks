@@ -4,7 +4,8 @@ on run argv
     if (count of argv) is less than 1 then error "Missing output json path"
 
     set outputPath to item 1 of argv
-    set jsonText to "{\"version\":\"phase1-minimal\",\"events\":["
+    set generatedAt to do shell script "date -u +%Y-%m-%dT%H:%M:%SZ"
+    set jsonText to "{\"version\":\"0.4.0-phase1\",\"generated_at\":\"" & generatedAt & "\",\"events\":["
     set firstItem to true
 
     tell application "Reminders"
@@ -14,7 +15,14 @@ on run argv
                 try
                     if completed of oneReminder is true then
                         set reminderTitle to name of oneReminder as text
-                        set itemJson to my eventJson(listName, reminderTitle)
+                        set reminderBody to ""
+                        try
+                            set reminderBody to body of oneReminder as text
+                        end try
+                        set completedAt to my safeCompletionDate(oneReminder)
+                        set gtdId to my extractGtdId(reminderBody)
+                        set eventId to my buildEventId(gtdId, completedAt, reminderTitle)
+                        set itemJson to my eventJson(eventId, gtdId, listName, reminderTitle, completedAt)
                         if firstItem then
                             set jsonText to jsonText & itemJson
                             set firstItem to false
@@ -33,9 +41,59 @@ on run argv
     return outputPath
 end run
 
-on eventJson(listName, reminderTitle)
-    return "{\"list_name\":\"" & my jsonEscape(listName) & "\",\"title\":\"" & my jsonEscape(reminderTitle) & "\"}"
+on eventJson(eventId, gtdId, listName, reminderTitle, completedAt)
+    return "{\"event_id\":\"" & my jsonEscape(eventId) & "\",\"event_type\":\"completed\",\"gtd_id\":\"" & my jsonEscape(gtdId) & "\",\"list_name\":\"" & my jsonEscape(listName) & "\",\"title\":\"" & my jsonEscape(reminderTitle) & "\",\"completed_at\":\"" & my jsonEscape(completedAt) & "\",\"source\":\"apple_reminders_phase1\"}"
 end eventJson
+
+on safeCompletionDate(oneReminder)
+    try
+        set completedDate to completion date of oneReminder
+        if completedDate is missing value then error "missing completion date"
+        return do shell script "python3 - <<'PY'\nimport datetime\nimport sys\nraw = sys.stdin.read().strip()\nprint(raw)\nPY" with input (completedDate as text)
+    on error
+        return do shell script "date -u +%Y-%m-%dT%H:%M:%SZ"
+    end try
+end safeCompletionDate
+
+on extractGtdId(reminderBody)
+    set marker to "[GTD_ID]"
+    set tid to ""
+    try
+        set oldDelims to AppleScript's text item delimiters
+        set AppleScript's text item delimiters to marker
+        set parts to text items of reminderBody
+        set AppleScript's text item delimiters to oldDelims
+        if (count of parts) > 1 then
+            set tailText to item 2 of parts
+            set tid to my firstToken(tailText)
+        end if
+    on error
+        set AppleScript's text item delimiters to oldDelims
+    end try
+    return tid
+end extractGtdId
+
+on firstToken(inputText)
+    set cleanText to my replaceText(return, " ", inputText)
+    set cleanText to my replaceText(linefeed, " ", cleanText)
+    set cleanText to my replaceText(tab, " ", cleanText)
+    set oldDelims to AppleScript's text item delimiters
+    set AppleScript's text item delimiters to " "
+    set parts to text items of cleanText
+    set AppleScript's text item delimiters to oldDelims
+    repeat with onePart in parts
+        set v to (onePart as text)
+        if v is not "" then return v
+    end repeat
+    return ""
+end firstToken
+
+on buildEventId(gtdId, completedAt, reminderTitle)
+    if gtdId is not "" then
+        return gtdId & "::" & completedAt
+    end if
+    return my jsonEscape(reminderTitle) & "::" & completedAt
+end buildEventId
 
 on jsonEscape(inputText)
     set t to inputText as text

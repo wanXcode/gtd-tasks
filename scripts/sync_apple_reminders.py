@@ -54,6 +54,7 @@ def main():
         result = {
             'status': 'exported',
             'task_count': len(payload.get('tasks', [])),
+            'summary': payload.get('summary', {}),
             'output': str(resolved_output),
         }
         if args.git_sync or args.git_push:
@@ -76,6 +77,7 @@ def main():
         dump({
             'status': result.get('status', 'success'),
             'task_count': len(payload.get('tasks', [])),
+            'summary': payload.get('summary', {}),
             'output': str(resolved_output),
         }, pretty=args.pretty)
     except PushNotConfigured as exc:
@@ -83,6 +85,7 @@ def main():
             'status': 'push_skipped',
             'reason': str(exc),
             'task_count': len(payload.get('tasks', [])),
+            'summary': payload.get('summary', {}),
             'output': str(resolved_output),
         }, pretty=args.pretty)
 

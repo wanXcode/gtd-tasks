@@ -7,7 +7,8 @@ use scripting additions
 on run argv
 	if (count of argv) is 0 then error "Missing export json path"
 	set jsonPath to item 1 of argv
-	set repoRoot to do shell script "cd " & quoted form of POSIX path of ((path to me as text)) & "/.. && pwd"
+	set scriptPath to POSIX path of (path to me)
+	set repoRoot to do shell script "cd " & quoted form of ((do shell script "dirname " & quoted form of scriptPath) & "/..") & " && pwd"
 	set localMapPath to repoRoot & "/sync/apple-reminders-local-map.json"
 	set rows to my loadRows(jsonPath)
 	set createdCount to 0

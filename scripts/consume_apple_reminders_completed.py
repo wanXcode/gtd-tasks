@@ -77,13 +77,17 @@ def apply_done(task: Dict[str, Any], completed_at: str, source: str) -> bool:
     if task.get('completed_at') != completed_at:
         task['completed_at'] = completed_at
         changed = True
-    task['updated_at'] = now_iso()
-    task['last_synced_at'] = now_iso()
-    task['sync_version'] = int(task.get('sync_version', 1) or 1) + 1
-    note = (task.get('note') or '').strip()
-    marker = f'[apple_reminders_completed] source={source}'
-    if marker not in note:
-        task['note'] = (note + ('\n\n' if note else '') + marker).strip()
+    sync_now = now_iso()
+    if task.get('updated_at') != sync_now:
+        task['updated_at'] = sync_now
+        changed = True
+    if task.get('last_synced_at') != sync_now:
+        task['last_synced_at'] = sync_now
+        changed = True
+    next_sync_version = int(task.get('sync_version', 1) or 1) + 1
+    if int(task.get('sync_version', 1) or 1) != next_sync_version:
+        task['sync_version'] = next_sync_version
+        changed = True
     return changed
 
 
@@ -113,12 +117,17 @@ def main() -> None:
         'skipped_not_found': 0,
         'skipped_already_done': 0,
         'applied_event_ids': [],
+        'errors': [],
     }
 
     for event in events_doc.get('events', []):
         summary['seen'] += 1
         event_id = str(event.get('event_id') or '').strip()
+        event_type = str(event.get('event_type') or 'completed').strip()
         gtd_id = str(event.get('gtd_id') or '').strip()
+        if event_type != 'completed':
+            summary['errors'].append({'event_id': event_id or None, 'reason': f'unsupported_event_type:{event_type}'})
+            continue
         if not gtd_id:
             summary['skipped_no_gtd_id'] += 1
             continue
@@ -130,12 +139,16 @@ def main() -> None:
         if not task:
             summary['skipped_not_found'] += 1
             continue
+        if task.get('deleted_at'):
+            summary['skipped_not_found'] += 1
+            continue
         if task.get('status') == 'done':
             if event_id:
                 applied_ids.add(event_id)
                 applied['applied_event_ids'].append(event_id)
                 applied['applied_events'].append({
                     'event_id': event_id,
+                    'event_type': event_type,
                     'gtd_id': gtd_id,
                     'status': 'already_done',
                     'applied_at': now_iso(),
@@ -145,15 +158,17 @@ def main() -> None:
 
         completed_at = str(event.get('completed_at') or now_iso())
         source = str(event.get('source') or 'apple_reminders_phase1')
-        apply_done(task, completed_at=completed_at, source=source)
-        summary['applied'] += 1
+        changed = apply_done(task, completed_at=completed_at, source=source)
+        if changed:
+            summary['applied'] += 1
         if event_id:
             applied_ids.add(event_id)
             applied['applied_event_ids'].append(event_id)
             applied['applied_events'].append({
                 'event_id': event_id,
+                'event_type': event_type,
                 'gtd_id': gtd_id,
-                'status': 'applied',
+                'status': 'applied' if changed else 'no_change',
                 'applied_at': now_iso(),
             })
             summary['applied_event_ids'].append(event_id)

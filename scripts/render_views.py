@@ -9,13 +9,14 @@ DATA = ROOT / 'data' / 'tasks.json'
 TZ = ZoneInfo('Asia/Shanghai')
 WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 CATEGORY_LABELS = {
-    'index': '收集箱@inbox',
+    'inbox': '收集箱@inbox',
     'project': '项目@project',
     'next_action': '下一步行动@NextAction',
     'waiting_for': '等待@Waiting For',
     'maybe': '可能的事@Maybe',
 }
-CATEGORY_ORDER = ['index', 'project', 'next_action', 'waiting_for', 'maybe']
+CATEGORY_ORDER = ['inbox', 'project', 'next_action', 'waiting_for', 'maybe']
+DONE_LIKE_STATUSES = {'done', 'cancelled', 'archived'}
 
 
 def load_data():
@@ -69,17 +70,37 @@ def verbose_task_line(task, bullet='-'):
     return f"{bullet} {task['title']} | {task.get('status')} | {task.get('bucket')} | {task.get('quadrant')} | tags={tags} | note={note}"
 
 
+def is_deleted(task):
+    return bool(task.get('deleted_at'))
+
+
+def is_open_visible(task):
+    return task.get('status') == 'open' and not is_deleted(task)
+
+
+def is_done_visible(task):
+    return task.get('status') in DONE_LIKE_STATUSES and not is_deleted(task)
+
+
+def visible_open_tasks(tasks):
+    return [t for t in tasks if is_open_visible(t)]
+
+
+def visible_done_tasks(tasks):
+    items = [t for t in tasks if is_done_visible(t)]
+    return sorted(items, key=lambda x: x.get('completed_at') or x.get('updated_at') or '', reverse=True)
+
+
 def by_bucket(tasks, bucket):
-    return [t for t in tasks if t.get('status') == 'open' and t.get('bucket') == bucket]
+    return [t for t in visible_open_tasks(tasks) if t.get('bucket') == bucket]
+
+
+def normalize_category(value):
+    return 'inbox' if (value or 'inbox') == 'index' else (value or 'inbox')
 
 
 def by_category(tasks, category):
-    return [t for t in tasks if t.get('status') == 'open' and t.get('category', 'index') == category]
-
-
-def done_tasks(tasks):
-    items = [t for t in tasks if t.get('status') in ('done', 'cancelled', 'archived')]
-    return sorted(items, key=lambda x: x.get('completed_at') or x.get('updated_at') or '', reverse=True)
+    return [t for t in visible_open_tasks(tasks) if normalize_category(t.get('category')) == category]
 
 
 def render_today(data):
@@ -104,10 +125,6 @@ def render_today(data):
     lines += [task_line(t, '•') for t in today] or ['（暂无）']
     lines += ['', '【明日】']
     lines += [task_line(t, '•') for t in tomorrow] or ['（暂无）']
-    lines += ['', '【当前分类概览】']
-    for category in CATEGORY_ORDER:
-        items = by_category(tasks, category)
-        lines += [f"- {CATEGORY_LABELS[category]}：{len(items)} 项"]
     lines += [
         '',
         '【提醒】',
@@ -122,7 +139,6 @@ def render_today(data):
 
 def render_inbox(data):
     tasks = data['tasks']
-    done = done_tasks(tasks)
     lines = [
         '# GTD 分类总览',
         '',
@@ -134,16 +150,16 @@ def render_inbox(data):
         items = by_category(tasks, category)
         lines += [task_line(t, '·') for t in items] or ['（暂无）']
         lines += ['']
-    lines += ['<!-- 新事项默认先进收集箱 -->', '', '## 已处理', '']
-    lines += [task_line(t, '·') for t in done] or ['（暂无）']
+    lines += ['<!-- 新事项默认先进收集箱 -->']
     return '\n'.join(lines) + '\n'
 
 
 def render_done(data):
     tasks = data['tasks']
-    done = [t for t in done_tasks(tasks) if t.get('status') == 'done']
-    cancelled = [t for t in done_tasks(tasks) if t.get('status') == 'cancelled']
-    archived = [t for t in done_tasks(tasks) if t.get('status') == 'archived']
+    completed_items = visible_done_tasks(tasks)
+    done = [t for t in completed_items if t.get('status') == 'done']
+    cancelled = [t for t in completed_items if t.get('status') == 'cancelled']
+    archived = [t for t in completed_items if t.get('status') == 'archived']
     lines = [
         '# 已完成 Done',
         '',
@@ -171,21 +187,21 @@ def render_weekly_review(data):
     bd = business_date(data)
     start = bd - timedelta(days=bd.weekday())
     end = start + timedelta(days=6)
-    open_tasks = [t for t in tasks if t.get('status') == 'open']
+    open_tasks = visible_open_tasks(tasks)
     created_this_week = [
         t for t in tasks
-        if (dt := parse_dt(t.get('created_at'))) and start <= dt.date() <= end
+        if not is_deleted(t) and (dt := parse_dt(t.get('created_at'))) and start <= dt.date() <= end
     ]
     completed_this_week = [
         t for t in tasks
-        if t.get('status') in ('done', 'cancelled', 'archived') and (dt := parse_dt(t.get('completed_at') or t.get('updated_at'))) and start <= dt.date() <= end
+        if is_done_visible(t) and (dt := parse_dt(t.get('completed_at') or t.get('updated_at'))) and start <= dt.date() <= end
     ]
     by_bucket_counts = {
         bucket: len([t for t in open_tasks if t.get('bucket') == bucket])
         for bucket in ['today', 'tomorrow', 'future', 'archive']
     }
     by_category_counts = {
-        category: len([t for t in open_tasks if t.get('category', 'index') == category])
+        category: len([t for t in open_tasks if normalize_category(t.get('category')) == category])
         for category in CATEGORY_ORDER
     }
     lines = [
@@ -209,7 +225,7 @@ def render_weekly_review(data):
         '',
         '## 当前待办分类',
         '',
-        f"- 收集箱@inbox: {by_category_counts['index']}",
+        f"- 收集箱@inbox: {by_category_counts['inbox']}",
         f"- 项目@project: {by_category_counts['project']}",
         f"- 下一步行动@NextAction: {by_category_counts['next_action']}",
         f"- 等待@Waiting For: {by_category_counts['waiting_for']}",
@@ -234,9 +250,11 @@ def render_matrix(data):
         'q3': ('Q3 紧急不重要（委托做）', ROOT / 'matrix' / 'q3-urgent-not-important.md'),
         'q4': ('Q4 不紧急不重要（少做）', ROOT / 'matrix' / 'q4-not-urgent-not-important.md'),
     }
+    visible_open = visible_open_tasks(tasks)
+    visible_done = visible_done_tasks(tasks)
     for quadrant, (title, path) in mapping.items():
-        open_tasks = [t for t in tasks if t.get('status') == 'open' and t.get('quadrant') == quadrant]
-        done = [t for t in tasks if t.get('status') in ('done', 'cancelled', 'archived') and t.get('quadrant') == quadrant]
+        open_tasks = [t for t in visible_open if t.get('quadrant') == quadrant]
+        done = [t for t in visible_done if t.get('quadrant') == quadrant]
         lines = [f'# {title}', '', '由 v0.2.x 主库自动生成。', '', '## 待办', '']
         lines += [f"- [ ] {task_line(t, '').strip()}" for t in open_tasks] or ['（暂无）']
         lines += ['', '## 已完成', '']

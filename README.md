@@ -46,6 +46,11 @@
 - 主分类体系统一为 5 类：`index / project / next_action / waiting_for / maybe`
 - `bucket` 只保留时间语义（today / tomorrow / future），不再作为主分类体系
 - 默认任务字段里，`category=index`、`bucket=future`、`quadrant=q2`
+- 常规视图只展示 `status=open && deleted_at=null` 的任务
+- `done / cancelled / archived` 进入完成区（`done.md` / `weekly/review-latest.md`）
+- `deleted_at != null` 视为真删除，不进入主清单、完成区、矩阵等常规视图
+- CLI 中 `done` 表示完成并保留历史；`delete` 表示真删除（设置 `deleted_at`），两者语义彻底分开
+- Apple 回传当前只支持 `completed -> done`，不支持标题、备注、分类、删除回写
 
 ## CLI：结构化任务操作
 
@@ -169,6 +174,13 @@ python3 scripts/render_views.py
 - `done.md`
 - `weekly/review-latest.md`
 - `matrix/*.md`
+
+### 视图过滤规则
+
+- `today.md / inbox.md / matrix/*.md` 只显示 open 且未 deleted 的任务
+- `done.md` 只显示 `done / cancelled / archived` 且未 deleted 的任务
+- `weekly/review-latest.md` 的 open 统计只看 open 且未 deleted；完成统计只看 `done / cancelled / archived` 且未 deleted
+- deleted 任务默认不进入任何常规视图
 
 ### done.md
 

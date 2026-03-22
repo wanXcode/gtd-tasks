@@ -223,7 +223,9 @@ def export_payload(tasks_doc: Dict[str, Any], mapping: Dict[str, Any], selected_
         'lists': lists,
         'tasks': output_tasks,
         'summary': {
-            'exported_open_tasks': len(output_tasks),
+            'exported_task_count': len(output_tasks),
+            'exported_open_tasks': len([item for item in output_tasks if item.get('sync_action') == 'upsert']),
+            'exported_completion_tasks': len([item for item in output_tasks if item.get('sync_action') == 'complete']),
             'total_source_tasks': len(tasks_doc.get('tasks', [])),
             'selected_source_tasks': len(source_tasks),
         },

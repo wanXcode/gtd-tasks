@@ -18,7 +18,7 @@ TZ = ZoneInfo('Asia/Shanghai')
 VALID_BUCKETS = ['today', 'tomorrow', 'future', 'archive']
 VALID_QUADRANTS = ['q1', 'q2', 'q3', 'q4']
 VALID_STATUSES = ['open', 'done', 'cancelled', 'archived']
-VALID_CATEGORIES = ['index', 'project', 'next_action', 'waiting_for', 'maybe']
+VALID_CATEGORIES = ['inbox', 'project', 'next_action', 'waiting_for', 'maybe']
 LOGGER = setup_logger('task_cli')
 
 
@@ -76,6 +76,8 @@ def save_data(data):
 
 def infer_category(task):
     category = task.get('category')
+    if category == 'index':
+        category = 'inbox'
     if category in VALID_CATEGORIES:
         return category
 
@@ -99,7 +101,7 @@ def infer_category(task):
         return 'project'
     if tags & {'ME'} or any(keyword in text for keyword in action_keywords):
         return 'next_action'
-    return 'index'
+    return 'inbox'
 
 
 def next_id(tasks):
@@ -144,8 +146,13 @@ def find_task(data, task_id):
     raise SystemExit(f'task not found: {task_id}')
 
 
+def is_deleted(task):
+    return bool(task.get('deleted_at'))
+
+
 def apply_filters(tasks, args):
-    items = tasks
+    include_deleted = getattr(args, 'include_deleted', False)
+    items = tasks if include_deleted else [t for t in tasks if not is_deleted(t)]
     if getattr(args, 'id', None):
         items = [t for t in items if t['id'] == args.id]
     if getattr(args, 'status', None):
@@ -263,6 +270,7 @@ def cmd_done(args):
 def cmd_reopen(args):
     data = load_data()
     task = find_task(data, args.id)
+    task['deleted_at'] = None
     set_status(task, 'open')
     if args.bucket is not None:
         task['bucket'] = args.bucket
@@ -273,11 +281,22 @@ def cmd_reopen(args):
     print(f"reopened: {task['id']}")
 
 
+def cmd_delete(args):
+    data = load_data()
+    task = find_task(data, args.id)
+    task['deleted_at'] = now_iso()
+    bump_task(task)
+    save_data(data)
+    render()
+    auto_push_after_write([task['id']], 'task_cli.delete', sync=args.sync_apple_reminders)
+    print(f"deleted: {task['id']}")
+
+
 def cmd_list(args):
     data = load_data()
     tasks = apply_filters(data['tasks'], args)
     category_order = {name: idx for idx, name in enumerate(VALID_CATEGORIES)}
-    tasks = sorted(tasks, key=lambda t: (t.get('status') != 'open', category_order.get(t.get('category', 'index'), 99), t.get('bucket', ''), t.get('id', '')))
+    tasks = sorted(tasks, key=lambda t: (t.get('status') != 'open', category_order.get((t.get('category') or 'inbox').replace('index', 'inbox'), 99), t.get('bucket', ''), t.get('id', '')))
     if args.limit:
         tasks = tasks[:args.limit]
     for t in tasks:
@@ -375,7 +394,13 @@ def build_parser():
     p.add_argument('--text')
     p.add_argument('--limit', type=int)
     p.add_argument('--verbose', action='store_true')
+    p.add_argument('--include-deleted', action='store_true', help='包含已删除任务')
     p.set_defaults(func=cmd_list)
+
+    p = sub.add_parser('delete')
+    p.add_argument('id')
+    add_sync_flag(p)
+    p.set_defaults(func=cmd_delete)
 
     p = sub.add_parser('move')
     p.add_argument('--id')

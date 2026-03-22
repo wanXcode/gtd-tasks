@@ -200,11 +200,8 @@ def update_state_from_tasks(state: Dict[str, Any], tasks_doc: Dict[str, Any]) ->
             'sync_version': task.get('sync_version'),
             'signature': sig,
             'last_seen_at': now_iso(),
-            'last_observed_change_at': now_iso(),
             'last_exported_at': record.get('last_exported_at'),
             'last_pushed_at': record.get('last_pushed_at'),
-            'last_export_run_at': record.get('last_export_run_at'),
-            'last_push_run_at': record.get('last_push_run_at'),
             'last_push_status': record.get('last_push_status'),
             'last_target_list': record.get('last_target_list'),
             'last_error': record.get('last_error'),
@@ -231,12 +228,7 @@ def mark_exported_tasks(state: Dict[str, Any], exported_tasks: Iterable[Dict[str
             continue
         record = state.setdefault('tasks', {}).setdefault(task_id, {'gtd_id': task_id})
         record['last_exported_at'] = stamp
-        record['last_export_run_at'] = stamp
         record['last_target_list'] = item.get('target_list')
-        record['last_matched_rule_id'] = item.get('matched_rule_id')
-        record['last_export_payload_hash'] = hashlib.sha256(
-            json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode('utf-8')
-        ).hexdigest()
         record['exported_signature'] = record.get('signature')
         record['last_error'] = None
 
@@ -249,7 +241,6 @@ def mark_pushed_tasks(state: Dict[str, Any], exported_tasks: Iterable[Dict[str, 
             continue
         record = state.setdefault('tasks', {}).setdefault(task_id, {'gtd_id': task_id})
         record['last_pushed_at'] = stamp
-        record['last_push_run_at'] = stamp
         record['last_push_status'] = status
         record['last_target_list'] = item.get('target_list')
         record['last_error'] = error

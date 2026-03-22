@@ -18,7 +18,7 @@ TASK_CLI = ROOT / 'scripts' / 'task_cli.py'
 TZ = ZoneInfo('Asia/Shanghai')
 DEFAULT_BUCKET = 'future'
 DEFAULT_QUADRANT = 'q2'
-DEFAULT_CATEGORY = 'index'
+DEFAULT_CATEGORY = 'inbox'
 LOGGER = setup_logger('nlp_capture')
 BUCKET_KEYWORDS = [
     ('today', ['今天', '今日', '今晚', '今晚上', '今天内', '今天处理', '今天做']),
