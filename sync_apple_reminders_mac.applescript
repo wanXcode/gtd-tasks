@@ -25,7 +25,8 @@ on run argv
 					set gtdId to item 1 of parts
 					set listName to item 2 of parts
 					set reminderTitle to item 3 of parts
-					set reminderBody to my replaceText(" ", linefeed, item 4 of parts)
+					set reminderNotes to my replaceText(" ", linefeed, item 4 of parts)
+					set reminderBody to my composeReminderBody(gtdId, reminderNotes)
 					set dueDateText to item 5 of parts
 					set existingListName to item 6 of parts
 					set syncAction to item 7 of parts
@@ -152,6 +153,42 @@ on buildLocalMapRow(gtdId, listName, reminderTitle)
 	set matchKey to listName & "\n" & reminderTitle
 	return gtdId & tab & listName & tab & reminderTitle & tab & matchKey
 end buildLocalMapRow
+
+on composeReminderBody(gtdId, notesText)
+	set cleanNotes to my stripGtdMarker(notesText)
+	if gtdId is "" then return cleanNotes
+	set markerLine to "[GTD_ID] " & gtdId
+	if cleanNotes is "" then return markerLine
+	return markerLine & linefeed & linefeed & cleanNotes
+end composeReminderBody
+
+on stripGtdMarker(bodyText)
+	if bodyText is "" then return ""
+	set marker to "[GTD_ID]"
+	if bodyText does not contain marker then return bodyText
+	set paragraphsList to paragraphs of bodyText
+	set keptParagraphs to {}
+	repeat with oneParagraph in paragraphsList
+		set paragraphText to oneParagraph as text
+		if paragraphText does not start with marker then set end of keptParagraphs to paragraphText
+	end repeat
+	set rebuiltText to ""
+	repeat with i from 1 to count of keptParagraphs
+		set rebuiltText to rebuiltText & item i of keptParagraphs
+		if i is less than (count of keptParagraphs) then set rebuiltText to rebuiltText & linefeed
+	end repeat
+	repeat while rebuiltText begins with linefeed
+		set rebuiltText to text 2 thru -1 of rebuiltText
+	end repeat
+	repeat while rebuiltText ends with linefeed
+		if (length of rebuiltText) is 1 then
+			set rebuiltText to ""
+		else
+			set rebuiltText to text 1 thru -2 of rebuiltText
+		end if
+	end repeat
+	return rebuiltText
+end stripGtdMarker
 
 on writeLocalMap(localMapPath, rows)
 	set pythonCmd to "/usr/bin/python3 - <<'PY' " & quoted form of localMapPath & "\nimport json, sys\nout = sys.argv[1]\nentries = []\nseen = set()\nfor raw in sys.stdin.read().splitlines():\n    if not raw.strip():\n        continue\n    parts = raw.split('\\t')\n    if len(parts) < 4:\n        continue\n    gtd_id, list_name, title, match_key = parts[:4]\n    dedup_key = (gtd_id, match_key)\n    if dedup_key in seen:\n        continue\n    seen.add(dedup_key)\n    entries.append({\n        'gtd_id': gtd_id,\n        'list_name': list_name,\n        'title': title,\n        'match_key': match_key,\n    })\nwith open(out, 'w', encoding='utf-8') as f:\n    json.dump({\n        'version': '0.4.0-phase1-local-map',\n        'generated_at': None,\n        'match_strategy': 'list_name+title',\n        'entries': entries,\n    }, f, ensure_ascii=False, indent=2)\n    f.write('\\n')\nPY"
