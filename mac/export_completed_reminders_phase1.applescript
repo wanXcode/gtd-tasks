@@ -47,11 +47,9 @@ end eventJson
 
 on safeCompletionDate(oneReminder)
     try
-        set completedDate to completion date of oneReminder
-        if completedDate is missing value then error "missing completion date"
-        return (completedDate as text)
-    on error
         return do shell script "date -u +%Y-%m-%dT%H:%M:%SZ"
+    on error
+        return ""
     end try
 end safeCompletionDate
 
