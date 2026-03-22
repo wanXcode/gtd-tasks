@@ -37,7 +37,12 @@ on run argv
 					if syncAction is "complete" then
 						if reminderRef is not missing value then
 							try
-								set completed of reminderRef to true
+								tell application "Reminders"
+									set completed of reminderRef to true
+									set completion date of reminderRef to current date
+								end tell
+							on error errMsg number errNum
+								error "complete failed for " & gtdId & ": " & errMsg & " (" & errNum & ")"
 							end try
 							set updatedCount to updatedCount + 1
 						end if
