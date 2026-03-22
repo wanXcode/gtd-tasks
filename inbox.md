@@ -4,7 +4,7 @@
 
 ## 收集箱@inbox
 
-（暂无）
+· 联调测试A-新增到Apple — 联调用：验证 GTD -> Apple 新增同步
 
 ## 项目@project
 
