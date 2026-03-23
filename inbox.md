@@ -5,6 +5,7 @@
 ## 收集箱@inbox
 
 · 联调测试B-Apple勾选回传 — 联调用：验证 Apple completed -> GTD done 回传
+· 去开大会 1 — 早上
 
 ## 项目@project
 
