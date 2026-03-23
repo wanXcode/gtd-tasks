@@ -9,6 +9,12 @@
 - [ ] #ME 给张闯写回信 👤
 - [ ] #ME 确定新加坡EP安排 👤
 - [ ] #ME 整理资产和财务情况 👤
+<<<<<<< HEAD
+=======
+- [ ] 联调测试B-Apple勾选回传 — 联调用：验证 Apple completed -> GTD done 回传
+- [ ] 去打大会 33333333333 — 真实闭环测试E
+- [ ] 下午3点钟开2026年的员工大会
+>>>>>>> 4185d62 (chore(gtd): update tasks for employee meeting)
 
 ## 已完成
 

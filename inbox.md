@@ -4,7 +4,13 @@
 
 ## 收集箱@inbox
 
+<<<<<<< HEAD
 （暂无）
+=======
+· 联调测试B-Apple勾选回传 — 联调用：验证 Apple completed -> GTD done 回传
+· 去打大会 33333333333 — 真实闭环测试E
+· 下午3点钟开2026年的员工大会
+>>>>>>> 4185d62 (chore(gtd): update tasks for employee meeting)
 
 ## 项目@project
 
