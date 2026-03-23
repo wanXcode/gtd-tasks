@@ -2,14 +2,15 @@
 
 由主库自动生成，方便集中查看最近完成 / 取消 / 归档事项。
 
-生成时间：2026-03-24 04:16:40 CST
+生成时间：2026-03-24 04:22:14 CST
 
-已完成：16 项
+已完成：17 项
 已取消：0 项
 已归档：0 项
 
 ## 最近完成
 
+- 联调测试B-Apple勾选回传 | done | archive | q2 | tags=- | note=联调用：验证 Apple completed -> GTD done 回传
 - 去打大会 33333333333 | done | archive | q2 | tags=- | note=真实闭环测试E
 - 去开大会 222 | done | archive | q2 | tags=- | note=真实闭环测试D
 - 去开大会 1 | done | archive | q2 | tags=- | note=早上

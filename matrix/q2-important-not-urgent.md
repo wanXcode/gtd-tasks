@@ -9,10 +9,10 @@
 - [ ] #ME 给张闯写回信 👤
 - [ ] #ME 确定新加坡EP安排 👤
 - [ ] #ME 整理资产和财务情况 👤
-- [ ] 联调测试B-Apple勾选回传 — 联调用：验证 Apple completed -> GTD done 回传
 
 ## 已完成
 
+- [x] 联调测试B-Apple勾选回传 — 联调用：验证 Apple completed -> GTD done 回传
 - [x] 去打大会 33333333333 — 真实闭环测试E
 - [x] 去开大会 222 — 真实闭环测试D
 - [x] 去开大会 1 — 早上
