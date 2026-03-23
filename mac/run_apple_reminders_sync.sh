@@ -119,26 +119,41 @@ with open(path, 'w', encoding='utf-8') as f:
 PY
 }
 
-restore_export_if_needed() {
-  local enabled tracked modified_output
+restore_runtime_files_if_needed() {
+  local enabled runtime_paths tracked_paths=() modified_output path
   enabled="$(normalize_bool "$GIT_RESTORE_EXPORT_BEFORE_PULL")"
   if [[ "$enabled" != "1" ]]; then
     return 0
   fi
 
-  tracked="$(run_git ls-files --error-unmatch -- sync/apple-reminders-export.json 2>/dev/null || true)"
-  if [[ -z "$tracked" ]]; then
+  runtime_paths=(
+    "sync/apple-reminders-export.json"
+    "sync/apple-reminders-completed-applied.json"
+    "sync/apple-reminders-completed-events.json"
+    "sync/apple-reminders-sync-state.json"
+  )
+
+  for path in "${runtime_paths[@]}"; do
+    if run_git ls-files --error-unmatch -- "$path" >/dev/null 2>&1; then
+      tracked_paths+=("$path")
+    fi
+  done
+
+  if [[ ${#tracked_paths[@]} -eq 0 ]]; then
     return 0
   fi
 
-  modified_output="$(run_git status --porcelain -- sync/apple-reminders-export.json 2>/dev/null || true)"
+  modified_output="$(run_git status --porcelain -- "${tracked_paths[@]}" 2>/dev/null || true)"
   if [[ -z "$modified_output" ]]; then
     return 0
   fi
 
-  log "git: restoring tracked runtime export before pull: sync/apple-reminders-export.json"
-  if ! run_git restore --worktree --source=HEAD -- sync/apple-reminders-export.json >/dev/null 2>&1; then
-    log "git: restore export failed; keep current working tree"
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && log "git: restoring tracked runtime file before pull: ${line#?? }"
+  done <<< "$modified_output"
+
+  if ! run_git restore --worktree --source=HEAD -- "${tracked_paths[@]}" >/dev/null 2>&1; then
+    log "git: restore runtime files failed; keep current working tree"
   fi
 }
 
@@ -163,7 +178,7 @@ maybe_git_pull() {
   fi
 
   export_before="$(read_export_generated_at "$EXPORT_PATH")"
-  restore_export_if_needed
+  restore_runtime_files_if_needed
 
   dirty_output="$(run_git status --porcelain --untracked-files=no 2>/dev/null || true)"
   if [[ -n "$dirty_output" ]]; then
