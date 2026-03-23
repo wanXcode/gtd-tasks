@@ -6,8 +6,8 @@
 
 ## 本周概览
 
-- 本周新增任务数：3
-- 本周完成/取消/归档任务数：2
+- 本周新增任务数：4
+- 本周完成/取消/归档任务数：3
 - 当前未完成任务数：9
 
 ## 当前待办分桶
@@ -26,12 +26,14 @@
 
 ## 本周新增
 
+- 去开大会 222 | done | archive | q2 | tags=- | note=真实闭环测试D
 - 去开大会 1 | done | archive | q2 | tags=- | note=早上
 - 联调测试B-Apple勾选回传 | open | future | q2 | tags=- | note=联调用：验证 Apple completed -> GTD done 回传
 - 联调测试A-新增到Apple | done | archive | q2 | tags=- | note=联调用：验证 GTD -> Apple 新增同步
 
 ## 本周完成
 
+- 去开大会 222 | done | archive | q2 | tags=- | note=真实闭环测试D
 - 去开大会 1 | done | archive | q2 | tags=- | note=早上
 - 联调测试A-新增到Apple | done | archive | q2 | tags=- | note=联调用：验证 GTD -> Apple 新增同步
 
