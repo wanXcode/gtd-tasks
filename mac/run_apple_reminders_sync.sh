@@ -215,6 +215,11 @@ if [[ -n "$SINGLE_TASK_ID" ]]; then
   EXPORT_PATH="$DEFAULT_TMP_EXPORT_DIR/apple-reminders-task-${SINGLE_TASK_ID}.json"
   log "export: building single-task payload for $SINGLE_TASK_ID -> $EXPORT_PATH"
   "$PYTHON_BIN" "$REPO_ROOT/scripts/sync_apple_reminders.py" --mode export --task-id "$SINGLE_TASK_ID" --output "$EXPORT_PATH" >/dev/null
+else
+  if [[ "$EXPORT_PATH" == "$DEFAULT_EXPORT_PATH" ]]; then
+    log "export: refreshing shared payload -> $EXPORT_PATH"
+    "$PYTHON_BIN" "$REPO_ROOT/scripts/sync_apple_reminders.py" --mode export --output "$EXPORT_PATH" >/dev/null
+  fi
 fi
 
 if [[ ! -f "$EXPORT_PATH" ]]; then
