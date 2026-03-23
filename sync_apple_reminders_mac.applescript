@@ -191,12 +191,32 @@ on stripGtdMarker(bodyText)
 end stripGtdMarker
 
 on writeLocalMap(localMapPath, rows)
-	set pythonCmd to "/usr/bin/python3 - <<'PY' " & quoted form of localMapPath & "\nimport json, sys\nout = sys.argv[1]\nentries = []\nseen = set()\nfor raw in sys.stdin.read().splitlines():\n    if not raw.strip():\n        continue\n    parts = raw.split('\\t')\n    if len(parts) < 4:\n        continue\n    gtd_id, list_name, title, match_key = parts[:4]\n    dedup_key = (gtd_id, match_key)\n    if dedup_key in seen:\n        continue\n    seen.add(dedup_key)\n    entries.append({\n        'gtd_id': gtd_id,\n        'list_name': list_name,\n        'title': title,\n        'match_key': match_key,\n    })\nwith open(out, 'w', encoding='utf-8') as f:\n    json.dump({\n        'version': '0.4.0-phase1-local-map',\n        'generated_at': None,\n        'match_strategy': 'list_name+title',\n        'entries': entries,\n    }, f, ensure_ascii=False, indent=2)\n    f.write('\\n')\nPY"
-	set payload to ""
+	set entriesJson to ""
+	set seenKeys to {}
 	repeat with rowText in rows
-		set payload to payload & rowText & linefeed
+		set rawText to rowText as text
+		if rawText is not "" then
+			set parts to my splitByTab(rawText)
+			if (count of parts) ≥ 4 then
+				set gtdId to item 1 of parts
+				set listName to item 2 of parts
+				set reminderTitle to item 3 of parts
+				set matchKey to item 4 of parts
+				set dedupKey to gtdId & "||" & matchKey
+				if seenKeys does not contain dedupKey then
+					set end of seenKeys to dedupKey
+					set oneEntry to "{\"gtd_id\":\"" & my jsonEscape(gtdId) & "\",\"list_name\":\"" & my jsonEscape(listName) & "\",\"title\":\"" & my jsonEscape(reminderTitle) & "\",\"match_key\":\"" & my jsonEscape(matchKey) & "\"}"
+					if entriesJson is "" then
+						set entriesJson to oneEntry
+					else
+						set entriesJson to entriesJson & "," & oneEntry
+					end if
+				end if
+			end if
+		end if
 	end repeat
-	do shell script "mkdir -p " & quoted form of POSIX path of (do shell script "dirname " & quoted form of localMapPath) & " && printf %s " & quoted form of payload & " | " & pythonCmd
+	set jsonText to "{\"version\":\"0.4.0-phase1-local-map\",\"generated_at\":null,\"match_strategy\":\"list_name+title\",\"entries\":[" & entriesJson & "]}"
+	do shell script "mkdir -p " & quoted form of POSIX path of (do shell script "dirname " & quoted form of localMapPath) & " && /usr/bin/printf %s " & quoted form of jsonText & " > " & quoted form of localMapPath
 end writeLocalMap
 
 on applyDueDate(targetReminder, dueDateText)
