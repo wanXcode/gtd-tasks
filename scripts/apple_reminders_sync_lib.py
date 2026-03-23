@@ -23,9 +23,15 @@ EXPORT_SCRIPT = ROOT / 'scripts' / 'export_apple_reminders_sync.py'
 MAC_SCRIPT = ROOT / 'sync_apple_reminders_mac.applescript'
 TZ = ZoneInfo('Asia/Shanghai')
 GIT_SYNC_ALLOWED_PATHS = [
-    Path('sync/apple-reminders-export.json'),
-    Path('sync/apple-reminders-sync-state.json'),
-    Path('sync/apple-reminders-local-map.json'),
+    Path('data/tasks.json'),
+    Path('done.md'),
+    Path('inbox.md'),
+    Path('today.md'),
+    Path('weekly/review-latest.md'),
+    Path('matrix/q1-urgent-important.md'),
+    Path('matrix/q2-important-not-urgent.md'),
+    Path('matrix/q3-urgent-not-important.md'),
+    Path('matrix/q4-not-urgent-not-important.md'),
 ]
 
 SYNC_ENV_FLAG = 'GTD_APPLE_REMINDERS_AUTO_PUSH'
@@ -500,7 +506,7 @@ def git_sync_export(logger: Optional[logging.Logger] = None, enable_commit: Opti
         result['branch'] = branch
         result['remote'] = remote
 
-        commit_message = f'chore(sync): update apple reminders export {now_dt().strftime("%Y-%m-%d %H:%M:%S %z")}'
+        commit_message = f'chore(gtd): sync reminders completed into gtd {now_dt().strftime("%Y-%m-%d %H:%M:%S %z")}'
         result['commit_message'] = commit_message
 
         if dry_run:

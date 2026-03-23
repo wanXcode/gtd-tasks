@@ -10,6 +10,8 @@ DEFAULT_LOG_DIR="$REPO_ROOT/logs"
 DEFAULT_STDOUT_LOG="$DEFAULT_LOG_DIR/apple-reminders-launchd.out.log"
 DEFAULT_STDERR_LOG="$DEFAULT_LOG_DIR/apple-reminders-launchd.err.log"
 DEFAULT_RUNTIME_STATE_PATH="$REPO_ROOT/sync/apple-reminders-mac-runtime-state.json"
+DEFAULT_COMPLETED_EVENTS_PATH="$REPO_ROOT/sync/apple-reminders-completed-events.json"
+DEFAULT_COMPLETED_APPLIED_PATH="$REPO_ROOT/sync/apple-reminders-completed-applied.json"
 
 EXPORT_PATH="${1:-${GTD_APPLE_REMINDERS_EXPORT_PATH:-$DEFAULT_EXPORT_PATH}}"
 SINGLE_TASK_ID="${GTD_APPLE_REMINDERS_TASK_ID:-}"
@@ -18,6 +20,8 @@ LOG_DIR="${GTD_APPLE_REMINDERS_LOG_DIR:-$DEFAULT_LOG_DIR}"
 RUN_LOG="$LOG_DIR/apple-reminders-sync-mac.log"
 LOCK_DIR="$LOG_DIR/.apple-reminders-sync.lock"
 RUNTIME_STATE_PATH="${GTD_APPLE_REMINDERS_MAC_RUNTIME_STATE_PATH:-$DEFAULT_RUNTIME_STATE_PATH}"
+COMPLETED_EVENTS_PATH="${GTD_APPLE_REMINDERS_COMPLETED_EVENTS_PATH:-$DEFAULT_COMPLETED_EVENTS_PATH}"
+COMPLETED_APPLIED_PATH="${GTD_APPLE_REMINDERS_COMPLETED_APPLIED_PATH:-$DEFAULT_COMPLETED_APPLIED_PATH}"
 PYTHON_BIN="${PYTHON_BIN:-/usr/bin/python3}"
 OSASCRIPT_BIN="${OSASCRIPT_BIN:-/usr/bin/osascript}"
 GIT_BIN="${GIT_BIN:-$(command -v git || true)}"
@@ -202,6 +206,64 @@ maybe_git_pull() {
   return 0
 }
 
+consume_completed_into_gtd() {
+  local consume_output status
+
+  if [[ ! -f "$COMPLETED_EVENTS_PATH" ]]; then
+    log "consume: events file missing, skip -> $COMPLETED_EVENTS_PATH"
+    return 0
+  fi
+
+  log "consume: applying completed events -> tasks.json (events=$COMPLETED_EVENTS_PATH applied=$COMPLETED_APPLIED_PATH)"
+  set +e
+  consume_output="$($PYTHON_BIN "$REPO_ROOT/scripts/consume_apple_reminders_completed.py" --events "$COMPLETED_EVENTS_PATH" --applied-log "$COMPLETED_APPLIED_PATH" 2>&1)"
+  status=$?
+  set -e
+
+  if [[ -n "$consume_output" ]]; then
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && log "consume: $line"
+    done <<< "$consume_output"
+  fi
+
+  if [[ $status -ne 0 ]]; then
+    log "consume: failed exit_code=$status"
+    return $status
+  fi
+
+  log "consume: done exit_code=0"
+  return 0
+}
+
+commit_gtd_views_if_needed() {
+  local commit_output status
+
+  if ! is_git_repo; then
+    log "git: skip gtd commit because repo is not a git worktree or git is unavailable"
+    return 0
+  fi
+
+  log "git: stage/commit/push allowed GTD files only"
+  set +e
+  commit_output="$($PYTHON_BIN "$REPO_ROOT/scripts/git_sync_export.py" --commit --push --pretty 2>&1)"
+  status=$?
+  set -e
+
+  if [[ -n "$commit_output" ]]; then
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && log "git-sync: $line"
+    done <<< "$commit_output"
+  fi
+
+  if [[ $status -ne 0 ]]; then
+    log "git: gtd commit/push failed exit_code=$status"
+    return $status
+  fi
+
+  log "git: gtd commit/push done exit_code=0"
+  return 0
+}
+
 if ! mkdir "$LOCK_DIR" >/dev/null 2>&1; then
   log "skip: another sync process is running"
   exit 20
@@ -283,6 +345,9 @@ if [[ $STATUS -ne 0 ]]; then
   log "failed: exit_code=$STATUS"
   exit $STATUS
 fi
+
+consume_completed_into_gtd
+commit_gtd_views_if_needed
 
 write_runtime_state "$CURRENT_GENERATED_AT" "$TASK_COUNT" "$EXPORT_PATH"
 log "done: exit_code=0 generated_at=${CURRENT_GENERATED_AT:-none}"
