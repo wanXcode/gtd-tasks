@@ -5,7 +5,6 @@
 ## 收集箱@inbox
 
 · 联调测试B-Apple勾选回传 — 联调用：验证 Apple completed -> GTD done 回传
-· 去打大会 33333333333 — 真实闭环测试E
 
 ## 项目@project
 
