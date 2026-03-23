@@ -109,18 +109,6 @@ end ensureListByName
 on findReminderAnywhere(gtdId, targetListName, reminderTitle)
 	tell application "Reminders"
 		set allLists to every list
-		repeat with oneList in allLists
-			set listNameText to name of oneList as text
-			set reminderItems to every reminder of oneList
-			repeat with oneReminder in reminderItems
-				try
-					set bodyText to body of oneReminder as text
-				on error
-					set bodyText to ""
-				end try
-				if gtdId is not "" and bodyText contains ("[GTD_ID] " & gtdId) then return {contents of oneReminder, listNameText}
-			end repeat
-		end repeat
 
 		if targetListName is not "" and reminderTitle is not "" then
 			try
@@ -128,7 +116,8 @@ on findReminderAnywhere(gtdId, targetListName, reminderTitle)
 					set targetListRef to list targetListName
 					set reminderItems to every reminder of targetListRef
 					repeat with oneReminder in reminderItems
-						if (name of oneReminder as text) is reminderTitle then return {contents of oneReminder, targetListName}
+						set reminderName to my safeReminderName(oneReminder)
+						if reminderName is reminderTitle then return {oneReminder, targetListName}
 					end repeat
 				end if
 			on error
@@ -136,18 +125,54 @@ on findReminderAnywhere(gtdId, targetListName, reminderTitle)
 			end try
 		end if
 
+		if gtdId is not "" then
+			repeat with oneList in allLists
+				set listNameText to name of oneList as text
+				set reminderItems to every reminder of oneList
+				repeat with oneReminder in reminderItems
+					set bodyText to my safeReminderBody(oneReminder)
+					if bodyText contains ("[GTD_ID] " & gtdId) then return {oneReminder, listNameText}
+				end repeat
+			end repeat
+		end if
+
 		if reminderTitle is not "" then
 			repeat with oneList in allLists
 				set listNameText to name of oneList as text
 				set reminderItems to every reminder of oneList
 				repeat with oneReminder in reminderItems
-					if (name of oneReminder as text) is reminderTitle then return {contents of oneReminder, listNameText}
+					set reminderName to my safeReminderName(oneReminder)
+					if reminderName is reminderTitle then return {oneReminder, listNameText}
 				end repeat
 			end repeat
 		end if
 	end tell
 	return {missing value, ""}
 end findReminderAnywhere
+
+on safeReminderName(oneReminder)
+	try
+		return name of oneReminder
+	on error
+		try
+			return (name of contents of oneReminder)
+		on error
+			return ""
+		end try
+	end try
+end safeReminderName
+
+on safeReminderBody(oneReminder)
+	try
+		return body of oneReminder as text
+	on error
+		try
+			return body of contents of oneReminder as text
+		on error
+			return ""
+		end try
+	end try
+end safeReminderBody
 
 on buildLocalMapRow(gtdId, listName, reminderTitle)
 	set matchKey to listName & "\n" & reminderTitle
