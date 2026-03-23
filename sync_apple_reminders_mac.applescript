@@ -239,6 +239,16 @@ on applyDueDate(targetReminder, dueDateText)
 	end try
 end applyDueDate
 
+on jsonEscape(inputText)
+	set t to inputText as text
+	set t to my replaceText("\\", "\\\\", t)
+	set t to my replaceText("\"", "\\\"", t)
+	set t to my replaceText(return, "\\n", t)
+	set t to my replaceText(linefeed, "\\n", t)
+	set t to my replaceText(tab, "\\t", t)
+	return t
+end jsonEscape
+
 on replaceText(findText, replaceTextValue, sourceText)
 	set oldTids to AppleScript's text item delimiters
 	set AppleScript's text item delimiters to findText
