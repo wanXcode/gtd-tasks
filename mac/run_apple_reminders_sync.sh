@@ -12,6 +12,7 @@ DEFAULT_STDERR_LOG="$DEFAULT_LOG_DIR/apple-reminders-launchd.err.log"
 DEFAULT_RUNTIME_STATE_PATH="$REPO_ROOT/sync/apple-reminders-mac-runtime-state.json"
 DEFAULT_COMPLETED_EVENTS_PATH="$REPO_ROOT/sync/apple-reminders-completed-events.json"
 DEFAULT_COMPLETED_APPLIED_PATH="$REPO_ROOT/sync/apple-reminders-completed-applied.json"
+DEFAULT_COMPLETED_EXPORT_SCRIPT_PATH="$REPO_ROOT/mac/export_completed_reminders_phase1.applescript"
 
 EXPORT_PATH="${1:-${GTD_APPLE_REMINDERS_EXPORT_PATH:-$DEFAULT_EXPORT_PATH}}"
 SINGLE_TASK_ID="${GTD_APPLE_REMINDERS_TASK_ID:-}"
@@ -22,6 +23,7 @@ LOCK_DIR="$LOG_DIR/.apple-reminders-sync.lock"
 RUNTIME_STATE_PATH="${GTD_APPLE_REMINDERS_MAC_RUNTIME_STATE_PATH:-$DEFAULT_RUNTIME_STATE_PATH}"
 COMPLETED_EVENTS_PATH="${GTD_APPLE_REMINDERS_COMPLETED_EVENTS_PATH:-$DEFAULT_COMPLETED_EVENTS_PATH}"
 COMPLETED_APPLIED_PATH="${GTD_APPLE_REMINDERS_COMPLETED_APPLIED_PATH:-$DEFAULT_COMPLETED_APPLIED_PATH}"
+COMPLETED_EXPORT_SCRIPT_PATH="${GTD_APPLE_REMINDERS_COMPLETED_EXPORT_SCRIPT_PATH:-$DEFAULT_COMPLETED_EXPORT_SCRIPT_PATH}"
 PYTHON_BIN="${PYTHON_BIN:-/usr/bin/python3}"
 OSASCRIPT_BIN="${OSASCRIPT_BIN:-/usr/bin/osascript}"
 GIT_BIN="${GIT_BIN:-$(command -v git || true)}"
@@ -206,6 +208,35 @@ maybe_git_pull() {
   return 0
 }
 
+export_completed_events() {
+  local export_output status
+
+  if [[ ! -f "$COMPLETED_EXPORT_SCRIPT_PATH" ]]; then
+    log "completed-export: script missing, skip -> $COMPLETED_EXPORT_SCRIPT_PATH"
+    return 0
+  fi
+
+  log "completed-export: exporting completed reminders -> $COMPLETED_EVENTS_PATH"
+  set +e
+  export_output="$($OSASCRIPT_BIN "$COMPLETED_EXPORT_SCRIPT_PATH" "$COMPLETED_EVENTS_PATH" 2>&1)"
+  status=$?
+  set -e
+
+  if [[ -n "$export_output" ]]; then
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && log "completed-export: $line"
+    done <<< "$export_output"
+  fi
+
+  if [[ $status -ne 0 ]]; then
+    log "completed-export: failed exit_code=$status"
+    return $status
+  fi
+
+  log "completed-export: done exit_code=0"
+  return 0
+}
+
 consume_completed_into_gtd() {
   local consume_output status
 
@@ -346,6 +377,7 @@ if [[ $STATUS -ne 0 ]]; then
   exit $STATUS
 fi
 
+export_completed_events
 consume_completed_into_gtd
 commit_gtd_views_if_needed
 
