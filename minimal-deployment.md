@@ -33,14 +33,14 @@ python3 -c "from server.app import run; run(port=8001)"
 
 ```bash
 # 健康检查
-curl http://127.0.0.1:8000/health
+curl https://gtd.5666.net/health
 # 预期返回: {"ok": true}
 
 # 获取任务列表
-curl http://127.0.0.1:8000/api/tasks
+curl https://gtd.5666.net/api/tasks
 
 # 获取变更记录
-curl http://127.0.0.1:8000/api/changes
+curl https://gtd.5666.net/api/changes
 ```
 
 ### 4. 导入现有数据
