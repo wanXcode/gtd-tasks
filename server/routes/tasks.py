@@ -1,3 +1,3 @@
-from server.services.task_service import TaskService
+from services.task_service import TaskService
 
 service = TaskService()

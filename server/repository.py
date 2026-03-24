@@ -4,8 +4,8 @@ import json
 import sqlite3
 from typing import Any, Dict, List, Optional
 
-from server.db import get_conn
-from server.models import AppleMapping, SyncClient, Task, TaskChange
+from db import get_conn
+from models import AppleMapping, SyncClient, Task, TaskChange
 
 
 class TaskRepository:

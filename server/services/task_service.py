@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 from zoneinfo import ZoneInfo
 
-from server.models import Task
-from server.repository import TaskRepository
-from server.schemas import TaskCreate, TaskListResponse, TaskUpdate
+from models import Task
+from repository import TaskRepository
+from schemas import TaskCreate, TaskListResponse, TaskUpdate
 
 TZ = ZoneInfo('Asia/Shanghai')
 
