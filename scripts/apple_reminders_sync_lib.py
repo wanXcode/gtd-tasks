@@ -32,6 +32,8 @@ GIT_SYNC_ALLOWED_PATHS = [
     Path('matrix/q2-important-not-urgent.md'),
     Path('matrix/q3-urgent-not-important.md'),
     Path('matrix/q4-not-urgent-not-important.md'),
+    Path('sync/apple-reminders-export.json'),
+    Path('sync/apple-reminders-sync-state.json'),
 ]
 
 SYNC_ENV_FLAG = 'GTD_APPLE_REMINDERS_AUTO_PUSH'
