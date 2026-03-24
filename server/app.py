@@ -4,10 +4,10 @@ import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from db import init_db
-from schemas import SyncClientAck, TaskCreate, TaskUpdate
-from services.change_service import ChangeService
-from services.task_service import TaskNotFoundError, TaskService
+from server.db import init_db
+from server.schemas import SyncClientAck, TaskCreate, TaskUpdate
+from server.services.change_service import ChangeService
+from server.services.task_service import TaskNotFoundError, TaskService
 
 
 def json_response(handler: BaseHTTPRequestHandler, payload, status: int = 200):

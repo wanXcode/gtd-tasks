@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from repository import TaskRepository
-from schemas import ChangeListResponse, SyncClientAck
+from server.repository import TaskRepository
+from server.schemas import ChangeListResponse, SyncClientAck
 
 
 class ChangeService:
