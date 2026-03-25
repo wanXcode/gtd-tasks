@@ -1,7 +1,7 @@
 {
   "version": "0.3.1",
   "timezone": "Asia/Shanghai",
-  "generated_at": "2026-03-25T09:56:25.376764+08:00",
+  "generated_at": "2026-03-25T10:00:05.161331+08:00",
   "source": {
     "tasks_file": "data/tasks.json",
     "mapping_file": "config/apple_reminders_mapping.json",
