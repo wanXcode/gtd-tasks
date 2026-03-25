@@ -284,10 +284,10 @@ def push_apple_completed_to_server(base_url: str = DEFAULT_API_URL) -> Dict[str,
         items = []
         if stdout and stdout != 'missing value':
             # 尝试从结果中提取 id
-            # 格式可能是: {id:"x-apple-reminder://...", name:"...", ...}
+            # AppleScript 返回格式: id:x-apple-reminder://..., name:..., completed_date:...
             import re
-            # 匹配 id 字段
-            ids = re.findall(r'id:"([^"]+)"', stdout)
+            # 匹配 id 字段（格式可能是 id:"..." 或 id:...）
+            ids = re.findall(r'id:(?:"?)(x-apple-reminder://[^",\s]+)', stdout)
             for rid in ids:
                 items.append({
                     'apple_reminder_id': rid,
