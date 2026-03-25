@@ -1,0 +1,73 @@
+{
+  "version": "0.3.1",
+  "timezone": "Asia/Shanghai",
+  "generated_at": "2026-03-19T06:35:46.508139+08:00",
+  "source": {
+    "tasks_file": "data/tasks.json",
+    "mapping_file": "config/apple_reminders_mapping.json",
+    "business_date": "2026-03-19",
+    "source_updated_at": "2026-03-19T06:30:06+08:00",
+    "requested_task_ids": [
+      "tsk_20260319_005"
+    ],
+    "changed_only": false
+  },
+  "lists": [
+    {
+      "id": "index",
+      "name": "收集箱@inbox",
+      "status": "active",
+      "notes": "默认收集入口，尚未澄清的事项先进入这里。"
+    },
+    {
+      "id": "project",
+      "name": "项目@project",
+      "status": "active",
+      "notes": "需要多步推进、需要持续管理的项目。"
+    },
+    {
+      "id": "next_action",
+      "name": "下一步行动@NextAction",
+      "status": "active",
+      "notes": "已经明确下一步动作、可以直接执行的事项。"
+    },
+    {
+      "id": "waiting_for",
+      "name": "等待@Waiting For",
+      "status": "active",
+      "notes": "等待别人回复、确认、反馈、交付。"
+    },
+    {
+      "id": "maybe",
+      "name": "可能的事@Maybe",
+      "status": "active",
+      "notes": "未来也许要做，但现在不承诺推进。"
+    }
+  ],
+  "tasks": [
+    {
+      "gtd_id": "tsk_20260319_005",
+      "title": "最终自动同步测试 01",
+      "note": "",
+      "status": "open",
+      "bucket": "future",
+      "quadrant": "q2",
+      "category": null,
+      "tags": [],
+      "updated_at": "2026-03-19T06:05:01+08:00",
+      "sync_version": 1,
+      "target_list": "可能的事@Maybe",
+      "target_list_id": "maybe",
+      "target_list_status": "active",
+      "matched_rule_id": "bucket_future_to_maybe",
+      "matched_rule_name": "future 默认归入可能的事",
+      "due_date": null,
+      "reminder_notes": ""
+    }
+  ],
+  "summary": {
+    "exported_open_tasks": 1,
+    "total_source_tasks": 26,
+    "selected_source_tasks": 1
+  }
+}

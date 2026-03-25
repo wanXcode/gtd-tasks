@@ -140,3 +140,13 @@ class TaskService:
             action='done'
         )
         return {'apple_reminder_id': apple_reminder_id, 'status': 'marked_done', 'task_id': task.id, 'result': result}
+
+    def save_apple_mapping(self, task_id: str, apple_reminder_id: str) -> Dict[str, Any]:
+        """保存 Apple Reminder ID 到 Task ID 的映射"""
+        # 检查任务是否存在
+        task = self.repo.get_task(task_id)
+        if not task:
+            return {'task_id': task_id, 'apple_reminder_id': apple_reminder_id, 'status': 'task_not_found'}
+        # 保存映射
+        self.repo.save_apple_mapping(task_id, apple_reminder_id)
+        return {'task_id': task_id, 'apple_reminder_id': apple_reminder_id, 'status': 'saved'}

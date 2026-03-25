@@ -2,8 +2,8 @@
   "version": "0.2.1",
   "meta": {
     "timezone": "Asia/Shanghai",
-    "business_date": "2026-03-24",
-    "updated_at": "2026-03-24T22:09:41+08:00"
+    "business_date": "2026-03-25",
+    "updated_at": "2026-03-25T08:35:07+08:00"
   },
   "tasks": [
     {
@@ -27,15 +27,15 @@
     {
       "id": "tsk_20260317_002",
       "title": "领游（增长中心）年度规划确认",
-      "status": "open",
+      "status": "done",
       "bucket": "today",
       "quadrant": "q1",
       "tags": [],
       "note": "",
       "source": "manual",
       "created_at": "2026-03-17T00:00:00+08:00",
-      "updated_at": "2026-03-17T00:00:00+08:00",
-      "completed_at": null,
+      "updated_at": "2026-03-25T18:20:53+08:00",
+      "completed_at": "2026-03-25T18:20:53+08:00",
       "source_task_id": null,
       "sync_version": 1,
       "deleted_at": null,
@@ -515,6 +515,24 @@
       "sync_version": 2,
       "deleted_at": null,
       "last_synced_at": "2026-03-24T22:09:41+08:00"
+    },
+    {
+      "id": "tsk_20260325_001",
+      "title": "上午处理邮件",
+      "status": "open",
+      "bucket": "tomorrow",
+      "quadrant": "q2",
+      "tags": [],
+      "note": "",
+      "category": "next_action",
+      "source": "nlp",
+      "created_at": "2026-03-25T08:35:07+08:00",
+      "updated_at": "2026-03-25T08:35:07+08:00",
+      "completed_at": null,
+      "source_task_id": null,
+      "sync_version": 1,
+      "deleted_at": null,
+      "last_synced_at": null
     }
   ]
 }

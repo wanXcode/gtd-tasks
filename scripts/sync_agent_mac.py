@@ -246,6 +246,15 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
             # 创建新 reminder
             result = run_apple_script('create', title=title, list_name=list_name, note=note)
             apple_id = result.get('stdout', '').strip()
+            # 回写映射关系到服务端
+            if apple_id and task_id:
+                try:
+                    api_request('POST', '/api/apple/mappings', {
+                        'mappings': [{'task_id': task_id, 'apple_reminder_id': apple_id}]
+                    }, base_url=DEFAULT_API_URL)
+                    log(f'Saved mapping: {task_id} -> {apple_id}')
+                except Exception as e:
+                    log(f'Failed to save mapping: {e}')
             return {'status': 'created', 'task_id': task_id, 'apple_reminder_id': apple_id}
         
         elif action == 'update':

@@ -99,6 +99,18 @@ class AppHandler(BaseHTTPRequestHandler):
                     result = self.task_service.mark_done_by_apple_id(apple_reminder_id, completed_at)
                     results.append(result)
             return json_response(self, {'processed': len(results), 'results': results})
+        if parsed.path == '/api/apple/mappings':
+            # 保存 Apple Reminder ID 到 Task ID 的映射
+            body = self._read_json()
+            mappings = body.get('mappings', [])
+            results = []
+            for mapping in mappings:
+                task_id = mapping.get('task_id')
+                apple_reminder_id = mapping.get('apple_reminder_id')
+                if task_id and apple_reminder_id:
+                    result = self.task_service.save_apple_mapping(task_id, apple_reminder_id)
+                    results.append(result)
+            return json_response(self, {'saved': len(results), 'results': results})
         return json_response(self, {'error': 'not found'}, status=404)
 
     def do_PATCH(self):

@@ -194,3 +194,16 @@ class TaskRepository:
                 'SELECT * FROM apple_mappings WHERE apple_reminder_id = ?', (apple_reminder_id,)
             ).fetchone()
         return AppleMapping.from_row(row) if row else None
+
+    def save_apple_mapping(self, task_id: str, apple_reminder_id: str) -> None:
+        """保存或更新 Apple Reminder ID 映射"""
+        with get_conn(self.db_path) as conn:
+            conn.execute(
+                '''INSERT INTO apple_mappings (task_id, apple_reminder_id, created_at)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT(task_id) DO UPDATE SET
+                   apple_reminder_id = excluded.apple_reminder_id,
+                   created_at = excluded.created_at''',
+                (task_id, apple_reminder_id, now_iso())
+            )
+            conn.commit()
