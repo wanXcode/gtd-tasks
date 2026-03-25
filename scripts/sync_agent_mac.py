@@ -274,12 +274,27 @@ def push_apple_completed_to_server(base_url: str = DEFAULT_API_URL) -> Dict[str,
     try:
         # 获取最近完成的 reminders
         result = run_apple_script('get_completed')
-        # 解析结果（简化处理）
-        # 实际应该解析 AppleScript 返回的结构
         
-        # 构造回写请求
+        # 解析 AppleScript 返回结果
+        # AppleScript 返回格式类似: {id:"xxx", name:"yyy", completed_date:date "..."}
+        stdout = result.get('stdout', '').strip()
+        log(f'AppleScript get_completed result: {stdout[:200]}...')
+        
+        # 简化解析：提取 reminder id
         items = []
-        # 这里简化，实际需要解析 result
+        if stdout and stdout != 'missing value':
+            # 尝试从结果中提取 id
+            # 格式可能是: {id:"x-apple-reminder://...", name:"...", ...}
+            import re
+            # 匹配 id 字段
+            ids = re.findall(r'id:"([^"]+)"', stdout)
+            for rid in ids:
+                items.append({
+                    'apple_reminder_id': rid,
+                    'completed_at': datetime.now(TZ).isoformat(),
+                })
+        
+        log(f'Parsed completed items: {len(items)}')
         
         if items:
             response = api_request('POST', '/api/apple/completed', {'items': items}, base_url=base_url)
@@ -287,6 +302,7 @@ def push_apple_completed_to_server(base_url: str = DEFAULT_API_URL) -> Dict[str,
         return {'status': 'ok', 'processed': 0, 'reason': 'no_completed_items'}
     
     except Exception as exc:
+        log(f'Push completed error: {exc}')
         return {'status': 'error', 'reason': str(exc)}
 
 
