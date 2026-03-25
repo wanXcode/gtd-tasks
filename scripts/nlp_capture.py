@@ -12,6 +12,10 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 
+# 设置默认使用服务端 API
+os.environ.setdefault('GTD_TASK_BACKEND', 'api')
+os.environ.setdefault('GTD_API_BASE_URL', 'https://gtd.5666.net')
+
 from apple_reminders_sync_lib import maybe_auto_push, setup_logger  # noqa: E402
 
 DATA = ROOT / 'data' / 'tasks.json'
