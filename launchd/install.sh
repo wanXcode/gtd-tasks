@@ -3,10 +3,16 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-GTD_ROOT="$(dirname "$SCRIPT_DIR")"
+# 使用用户传入的路径或自动检测
+if [ -n "$1" ]; then
+    GTD_ROOT="$1"
+else
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    GTD_ROOT="$(dirname "$SCRIPT_DIR")"
+fi
+
 PLIST_NAME="com.wan.gtd.sync.plist"
-PLIST_SRC="$SCRIPT_DIR/$PLIST_NAME"
+PLIST_SRC="$GTD_ROOT/launchd/$PLIST_NAME"
 PLIST_DST="$HOME/Library/LaunchAgents/$PLIST_NAME"
 
 echo "Installing GTD Mac Sync Agent launchd service..."
