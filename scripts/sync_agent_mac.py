@@ -315,9 +315,9 @@ def push_apple_completed_to_server(base_url: str = DEFAULT_API_URL) -> Dict[str,
         return {'status': 'error', 'reason': str(exc)}
 
 
-def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False) -> Dict[str, Any]:
+def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: bool = False) -> Dict[str, Any]:
     """运行一次完整同步"""
-    log(f'Starting sync (dry_run={dry_run})')
+    log(f'Starting sync (dry_run={dry_run}, full_sync={full_sync})')
     
     # 1. 加载本地状态
     state = load_sync_state()
@@ -325,12 +325,19 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False) -> Dict[str
     last_change_id = state.get('last_change_id', 0)
     log(f'Client: {client_id}, Last change_id: {last_change_id}')
     
-    # 2. 获取增量变更
+    # 2. 获取任务（全量或增量）
+    items = []
     try:
-        changes_resp = get_changes(last_change_id, base_url=base_url)
-        items = changes_resp.get('items', [])
-        next_change_id = changes_resp.get('next_change_id', last_change_id)
-        log(f'Got {len(items)} changes, next_change_id: {next_change_id}')
+        if full_sync:
+            # 全量同步：获取所有 open 任务
+            tasks = get_all_open_tasks(base_url=base_url)
+            items = [{'action': 'create', 'task': task} for task in tasks]
+            log(f'Got {len(items)} open tasks (full sync)')
+        else:
+            # 增量同步
+            changes_resp = get_changes(last_change_id, base_url=base_url)
+            items = changes_resp.get('items', [])
+            log(f'Got {len(items)} changes')
     except Exception as exc:
         log(f'Failed to get changes: {exc}')
         return {'status': 'error', 'phase': 'get_changes', 'error': str(exc)}
@@ -374,11 +381,19 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False) -> Dict[str
     }
 
 
+def get_all_open_tasks(base_url: str = DEFAULT_API_URL) -> List[Dict[str, Any]]:
+    """获取所有待办任务（用于全量同步）"""
+    url = f'{base_url}/api/tasks?status=open&limit=1000'
+    response = api_request('GET', url, base_url=base_url)
+    return response.get('items', [])
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Mac Sync Agent for GTD')
     parser.add_argument('--base-url', default=DEFAULT_API_URL, help='服务端 API 地址')
     parser.add_argument('--dry-run', action='store_true', help='只检查不执行')
     parser.add_argument('--init', action='store_true', help='初始化同步状态')
+    parser.add_argument('--full-sync', action='store_true', help='全量同步所有待办任务到 Apple Reminders')
     return parser
 
 
@@ -397,7 +412,7 @@ def main():
         log(f'Initialized sync state: {SYNC_STATE_PATH}')
         return
     
-    result = run_sync(base_url=args.base_url, dry_run=args.dry_run)
+    result = run_sync(base_url=args.base_url, dry_run=args.dry_run, full_sync=args.full_sync)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     
     # 返回非零退出码如果出错
