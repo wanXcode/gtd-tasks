@@ -107,7 +107,7 @@ def api_request(method: str, path: str, payload: Optional[Dict] = None, base_url
         headers['Content-Type'] = 'application/json'
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
     
-    # 创建 SSL 上下文，允许 macOS 系统证书
+    # 创建 SSL 上下文，禁用证书验证（解决 macOS 证书问题）
     ssl_context = ssl.create_default_context()
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl.CERT_NONE
