@@ -295,8 +295,8 @@ def push_apple_completed_to_server(base_url: str = DEFAULT_API_URL) -> Dict[str,
             # 尝试从结果中提取 id
             # AppleScript 返回格式: id:x-apple-reminder://..., name:..., completed_date:...
             import re
-            # 匹配 id 字段（格式可能是 id:"..." 或 id:...）
-            ids = re.findall(r'id:(?:"?)(x-apple-reminder://[^",\s]+)', stdout)
+            # 匹配 id 字段（格式: id:x-apple-reminder://UUID）
+            ids = re.findall(r'id:(x-apple-reminder://[^",\s]+)', stdout)
             for rid in ids:
                 items.append({
                     'apple_reminder_id': rid,
