@@ -207,11 +207,10 @@ class TaskRepository:
         """保存或更新 Apple Reminder ID 映射"""
         with get_conn(self.db_path) as conn:
             conn.execute(
-                '''INSERT INTO apple_mappings (task_id, apple_reminder_id, created_at)
-                   VALUES (?, ?, ?)
+                '''INSERT INTO apple_mappings (task_id, apple_reminder_id)
+                   VALUES (?, ?)
                    ON CONFLICT(task_id) DO UPDATE SET
-                   apple_reminder_id = excluded.apple_reminder_id,
-                   created_at = excluded.created_at''',
-                (task_id, apple_reminder_id, now_iso())
+                   apple_reminder_id = excluded.apple_reminder_id''',
+                (task_id, apple_reminder_id)
             )
             conn.commit()
