@@ -396,7 +396,7 @@ class ApiTaskRepository(TaskRepository):
 
 
 def get_repository(backend: Optional[str] = None) -> TaskRepository:
-    selected = (backend or os.getenv('GTD_TASK_BACKEND') or 'local').strip().lower()
+    selected = (backend or os.getenv('GTD_TASK_BACKEND') or 'api').strip().lower()
     if selected == 'local':
         return LocalJsonTaskRepository()
     if selected == 'api':
