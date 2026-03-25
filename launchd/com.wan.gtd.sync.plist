@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.wan.gtd.sync</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>REPLACE_WITH_YOUR_PATH/gtd-tasks/scripts/sync_agent_mac.py</string>
+    </array>
+    <key>StartInterval</key>
+    <integer>60</integer>
+    <key>StandardOutPath</key>
+    <string>REPLACE_WITH_YOUR_PATH/gtd-tasks/logs/sync.log</string>
+    <key>StandardErrorPath</key>
+    <string>REPLACE_WITH_YOUR_PATH/gtd-tasks/logs/sync-error.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>GTD_API_BASE_URL</key>
+        <string>https://gtd.5666.net</string>
+    </dict>
+</dict>
+</plist>
