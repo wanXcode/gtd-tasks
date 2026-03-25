@@ -187,3 +187,10 @@ class TaskRepository:
         with get_conn(self.db_path) as conn:
             row = conn.execute('SELECT * FROM apple_mappings WHERE task_id = ?', (task_id,)).fetchone()
         return AppleMapping.from_row(row) if row else None
+
+    def get_apple_mapping_by_reminder_id(self, apple_reminder_id: str) -> Optional[AppleMapping]:
+        with get_conn(self.db_path) as conn:
+            row = conn.execute(
+                'SELECT * FROM apple_mappings WHERE apple_reminder_id = ?', (apple_reminder_id,)
+            ).fetchone()
+        return AppleMapping.from_row(row) if row else None

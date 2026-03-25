@@ -88,6 +88,17 @@ class AppHandler(BaseHTTPRequestHandler):
                 meta=body.get('meta'),
             )
             return json_response(self, self.change_service.ack_client(client_id, ack, TaskService.now_iso()))
+        if parsed.path == '/api/apple/completed':
+            # Apple Reminders completed 回写
+            body = self._read_json()
+            results = []
+            for item in body.get('items', []):
+                apple_reminder_id = item.get('apple_reminder_id')
+                completed_at = item.get('completed_at')
+                if apple_reminder_id:
+                    result = self.task_service.mark_done_by_apple_id(apple_reminder_id, completed_at)
+                    results.append(result)
+            return json_response(self, {'processed': len(results), 'results': results})
         return json_response(self, {'error': 'not found'}, status=404)
 
     def do_PATCH(self):

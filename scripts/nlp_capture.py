@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -199,21 +200,31 @@ def print_preview(obj):
 
 
 def apply_capture(preview, sync_apple_reminders=False):
-    cmd = [
-        'python3', str(TASK_CLI), 'add', preview['title'],
-        '--bucket', preview['bucket'],
-        '--quadrant', preview['quadrant'],
-    ]
-    if preview.get('note'):
-        cmd += ['--note', preview['note']]
-    if preview.get('category'):
-        cmd += ['--category', preview['category']]
-    if preview.get('tags'):
-        cmd += ['--tags', *preview['tags']]
-    if sync_apple_reminders:
-        cmd += ['--sync-apple-reminders']
-    completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    return completed.stdout.strip()
+    # 使用 task_repository 直接调用，而不是通过子进程调用 task_cli.py
+    from task_repository import get_repository
+    
+    backend = os.getenv('GTD_TASK_BACKEND', 'local')
+    repo = get_repository(backend)
+    
+    result = repo.add_task(
+        title=preview['title'],
+        bucket=preview['bucket'],
+        quadrant=preview['quadrant'],
+        note=preview.get('note', ''),
+        tags=preview.get('tags', []),
+        category=preview.get('category'),
+        source='nlp',
+    )
+    
+    # 如果需要同步 Apple Reminders 且是 local backend
+    if sync_apple_reminders and backend == 'local':
+        from apple_reminders_sync_lib import maybe_auto_push
+        try:
+            maybe_auto_push(source='nlp_capture.apply_capture', changed_only=True, logger=LOGGER)
+        except Exception as exc:
+            LOGGER.warning('auto push failed: %s', exc)
+    
+    return f"added: {result.task['id']} {result.task['title']}"
 
 
 def build_parser():

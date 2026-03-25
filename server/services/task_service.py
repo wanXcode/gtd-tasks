@@ -121,3 +121,22 @@ class TaskService:
 
     def delete(self, task_id: str) -> Dict[str, Any]:
         return self.update_task(task_id, TaskUpdate(deleted_at=self.now_iso()), action='delete')
+
+    def mark_done_by_apple_id(self, apple_reminder_id: str, completed_at: Optional[str] = None) -> Dict[str, Any]:
+        """通过 Apple Reminder ID 标记任务完成（Apple -> 服务端回写）"""
+        # 先通过 apple_reminder_id 找到 task_id
+        mapping = self.repo.get_apple_mapping_by_reminder_id(apple_reminder_id)
+        if not mapping:
+            return {'apple_reminder_id': apple_reminder_id, 'status': 'not_found', 'task_id': None}
+        task = self.repo.get_task(mapping.task_id)
+        if not task:
+            return {'apple_reminder_id': apple_reminder_id, 'status': 'task_not_found', 'task_id': mapping.task_id}
+        if task.status == 'done':
+            return {'apple_reminder_id': apple_reminder_id, 'status': 'already_done', 'task_id': task.id}
+        # 标记完成
+        result = self.update_task(
+            task.id,
+            TaskUpdate(status='done', completed_at=completed_at or self.now_iso()),
+            action='done'
+        )
+        return {'apple_reminder_id': apple_reminder_id, 'status': 'marked_done', 'task_id': task.id, 'result': result}

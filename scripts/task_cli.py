@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime
@@ -11,6 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 
 from apple_reminders_sync_lib import maybe_auto_push, setup_logger  # noqa: E402
+from task_repository import get_repository, TaskRepository, TaskMutationResult  # noqa: E402
 
 DATA = ROOT / 'data' / 'tasks.json'
 RENDER = ROOT / 'scripts' / 'render_views.py'
@@ -34,125 +36,26 @@ def today_str():
     return now_dt().strftime('%Y-%m-%d')
 
 
-def load_data():
-    with open(DATA, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    data.setdefault('version', '0.2.1')
-    data.setdefault('meta', {})
-    data['meta'].setdefault('timezone', 'Asia/Shanghai')
-    data['meta'].setdefault('business_date', today_str())
-    data['meta'].setdefault('updated_at', now_iso())
-    data.setdefault('tasks', [])
-    for task in data['tasks']:
-        normalize_task(task)
-    return data
-
-
-def normalize_task(task):
-    task.setdefault('status', 'open')
-    task.setdefault('bucket', 'future')
-    task.setdefault('quadrant', 'q2')
-    task.setdefault('tags', [])
-    task.setdefault('note', '')
-    task.setdefault('category', infer_category(task))
-    task.setdefault('source', 'manual')
-    task.setdefault('source_task_id', None)
-    task.setdefault('sync_version', 1)
-    task.setdefault('deleted_at', None)
-    task.setdefault('last_synced_at', None)
-    task.setdefault('created_at', now_iso())
-    task.setdefault('updated_at', task['created_at'])
-    task.setdefault('completed_at', None)
-    return task
-
-
-def save_data(data):
-    data['meta']['updated_at'] = now_iso()
-    data['meta']['business_date'] = today_str()
-    with open(DATA, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-        f.write('\n')
-
-
-def infer_category(task):
-    category = task.get('category')
-    if category == 'index':
-        category = 'inbox'
-    if category in VALID_CATEGORIES:
-        return category
-
-    tags = set(task.get('tags', []) or [])
-    title = (task.get('title') or '')
-    note = (task.get('note') or '')
-    text = f"{title} {note}"
-    bucket = task.get('bucket')
-
-    waiting_keywords = ['等待', '确认', '回复', '回信', '跟进', '反馈', '催']
-    project_keywords = ['项目', '规划', '方案', '系统', '搭建', '优化', '升级']
-    action_keywords = ['给', '整理', '安排', '确认', '发送', '沟通', '推进', '处理']
-
-    if tags & {'WAIT', 'FOLLOWUP', 'FOLLOW_UP'}:
-        return 'waiting_for'
-    if any(keyword in text for keyword in waiting_keywords):
-        return 'waiting_for'
-    if bucket == 'future':
-        return 'maybe'
-    if any(keyword in text for keyword in project_keywords):
-        return 'project'
-    if tags & {'ME'} or any(keyword in text for keyword in action_keywords):
-        return 'next_action'
-    return 'inbox'
-
-
-def next_id(tasks):
-    nums = []
-    date_prefix = now_dt().strftime('%Y%m%d')
-    for t in tasks:
-        try:
-            parts = t['id'].split('_')
-            if len(parts) >= 3 and parts[1] == date_prefix:
-                nums.append(int(parts[-1]))
-        except Exception:
-            pass
-    n = max(nums) + 1 if nums else 1
-    return f"tsk_{date_prefix}_{n:03d}"
-
-
 def render():
     subprocess.run(['python3', str(RENDER)], check=True)
 
 
-def bump_task(task):
-    task['updated_at'] = now_iso()
-    task['sync_version'] = int(task.get('sync_version', 1) or 1) + 1
-
-
-def set_status(task, status):
-    task['status'] = status
-    if status == 'open':
-        task['completed_at'] = None
-        if task.get('bucket') == 'archive':
-            task['bucket'] = 'future'
-    else:
-        task['completed_at'] = now_iso()
-        if status in ('done', 'cancelled', 'archived'):
-            task['bucket'] = 'archive'
-
-
-def find_task(data, task_id):
-    for task in data['tasks']:
-        if task['id'] == task_id:
-            return task
-    raise SystemExit(f'task not found: {task_id}')
-
-
-def is_deleted(task):
-    return bool(task.get('deleted_at'))
+def auto_push_after_write(task_ids, source, sync=False, backend='local'):
+    if not sync:
+        return
+    if backend != 'local':
+        LOGGER.info('auto push skipped: backend is %s', backend)
+        return
+    try:
+        result = maybe_auto_push(source=source, changed_only=True, logger=LOGGER)
+        LOGGER.info('auto push result: %s', result)
+    except Exception as exc:
+        LOGGER.warning('auto push failed: %s', exc)
 
 
 def apply_filters(tasks, args):
     include_deleted = getattr(args, 'include_deleted', False)
-    items = tasks if include_deleted else [t for t in tasks if not is_deleted(t)]
+    items = tasks if include_deleted else [t for t in tasks if not t.get('deleted_at')]
     if getattr(args, 'id', None):
         items = [t for t in items if t['id'] == args.id]
     if getattr(args, 'status', None):
@@ -190,111 +93,83 @@ def format_task(task, verbose=False):
     )
 
 
-def auto_push_after_write(task_ids, source, sync=False):
-    if not sync:
-        return
-    try:
-        # 稳定性优先：自动链路不要再只按 task_id 导出单任务快照，
-        # 否则 export 文件会在某些轮次只剩一条新增/变更任务，Mac 端就可能
-        # 在 pull 成功后消费到不完整或看似“旧”的 payload。
-        # 这里改为 changed-only：仍然只覆盖发生变化的 open 任务集合，
-        # 但不会被调用点传入的单 task_id 限制住导出语义。
-        result = maybe_auto_push(source=source, changed_only=True, logger=LOGGER)
-        LOGGER.info('auto push result: %s', result)
-    except Exception as exc:
-        LOGGER.warning('auto push failed: %s', exc)
-
-
 def cmd_add(args):
-    data = load_data()
-    task = normalize_task({
-        'id': next_id(data['tasks']),
-        'title': args.title,
-        'status': 'open',
-        'bucket': args.bucket,
-        'quadrant': args.quadrant,
-        'tags': sorted(set(args.tags or [])),
-        'note': args.note or '',
-        'category': args.category or None,
-        'source': 'cli',
-        'created_at': now_iso(),
-        'updated_at': now_iso(),
-        'completed_at': None,
-    })
-    data['tasks'].append(task)
-    save_data(data)
-    render()
-    auto_push_after_write([task['id']], 'task_cli.add', sync=args.sync_apple_reminders)
-    print(f"added: {task['id']} {task['title']}")
+    repo = get_repository(args.backend)
+    result = repo.add_task(
+        title=args.title,
+        bucket=args.bucket,
+        quadrant=args.quadrant,
+        note=args.note or '',
+        tags=args.tags or [],
+        category=args.category,
+        source='cli',
+    )
+    if args.backend == 'local':
+        render()
+    auto_push_after_write([result.task['id']], 'task_cli.add', sync=args.sync_apple_reminders, backend=args.backend)
+    print(f"added: {result.task['id']} {result.task['title']}")
 
 
 def cmd_update(args):
-    data = load_data()
-    task = find_task(data, args.id)
+    repo = get_repository(args.backend)
+    updates = {}
     if args.title is not None:
-        task['title'] = args.title
+        updates['title'] = args.title
     if args.bucket is not None:
-        task['bucket'] = args.bucket
+        updates['bucket'] = args.bucket
     if args.quadrant is not None:
-        task['quadrant'] = args.quadrant
+        updates['quadrant'] = args.quadrant
     if args.note is not None:
-        task['note'] = args.note
+        updates['note'] = args.note
     if args.category is not None:
-        task['category'] = args.category
+        updates['category'] = args.category
     if args.status is not None:
-        set_status(task, args.status)
+        updates['status'] = args.status
     if args.set_tags is not None:
-        task['tags'] = sorted(set(args.set_tags))
+        updates['set_tags'] = args.set_tags
     if args.add_tags:
-        task['tags'] = sorted(set(task.get('tags', [])) | set(args.add_tags))
+        updates['add_tags'] = args.add_tags
     if args.remove_tags:
-        task['tags'] = [t for t in task.get('tags', []) if t not in set(args.remove_tags)]
-    bump_task(task)
-    save_data(data)
-    render()
-    auto_push_after_write([task['id']], 'task_cli.update', sync=args.sync_apple_reminders)
-    print(f"updated: {task['id']}")
+        updates['remove_tags'] = args.remove_tags
+    result = repo.update_task(args.id, updates)
+    if args.backend == 'local':
+        render()
+    auto_push_after_write([result.task['id']], 'task_cli.update', sync=args.sync_apple_reminders, backend=args.backend)
+    print(f"updated: {result.task['id']}")
 
 
 def cmd_done(args):
-    data = load_data()
-    task = find_task(data, args.id)
-    set_status(task, 'done')
-    bump_task(task)
-    save_data(data)
-    render()
-    auto_push_after_write([task['id']], 'task_cli.done', sync=args.sync_apple_reminders)
-    print(f"done: {task['id']}")
+    repo = get_repository(args.backend)
+    result = repo.mark_done(args.id)
+    if args.backend == 'local':
+        render()
+    auto_push_after_write([result.task['id']], 'task_cli.done', sync=args.sync_apple_reminders, backend=args.backend)
+    print(f"done: {result.task['id']}")
 
 
 def cmd_reopen(args):
-    data = load_data()
-    task = find_task(data, args.id)
-    task['deleted_at'] = None
-    set_status(task, 'open')
-    if args.bucket is not None:
-        task['bucket'] = args.bucket
-    bump_task(task)
-    save_data(data)
-    render()
-    auto_push_after_write([task['id']], 'task_cli.reopen', sync=args.sync_apple_reminders)
-    print(f"reopened: {task['id']}")
+    repo = get_repository(args.backend)
+    bucket = args.bucket if hasattr(args, 'bucket') else None
+    result = repo.reopen_task(args.id, bucket=bucket)
+    if args.backend == 'local':
+        render()
+    auto_push_after_write([result.task['id']], 'task_cli.reopen', sync=args.sync_apple_reminders, backend=args.backend)
+    print(f"reopened: {result.task['id']}")
 
 
 def cmd_delete(args):
-    data = load_data()
-    task = find_task(data, args.id)
-    task['deleted_at'] = now_iso()
-    bump_task(task)
-    save_data(data)
-    render()
-    auto_push_after_write([task['id']], 'task_cli.delete', sync=args.sync_apple_reminders)
-    print(f"deleted: {task['id']}")
+    repo = get_repository(args.backend)
+    result = repo.delete_task(args.id)
+    if args.backend == 'local':
+        render()
+    auto_push_after_write([result.task['id']], 'task_cli.delete', sync=args.sync_apple_reminders, backend=args.backend)
+    print(f"deleted: {result.task['id']}")
 
 
 def cmd_list(args):
-    data = load_data()
-    tasks = apply_filters(data['tasks'], args)
+    repo = get_repository(args.backend)
+    tasks = repo.list_tasks()
+    tasks = apply_filters(tasks, args)
     category_order = {name: idx for idx, name in enumerate(VALID_CATEGORIES)}
     tasks = sorted(tasks, key=lambda t: (t.get('status') != 'open', category_order.get((t.get('category') or 'inbox').replace('index', 'inbox'), 99), t.get('bucket', ''), t.get('id', '')))
     if args.limit:
@@ -304,41 +179,49 @@ def cmd_list(args):
 
 
 def cmd_move(args):
-    data = load_data()
-    tasks = apply_filters(data['tasks'], args)
+    repo = get_repository(args.backend)
+    tasks = repo.list_tasks()
+    tasks = apply_filters(tasks, args)
     if not tasks:
         raise SystemExit('no tasks matched')
-    for task in tasks:
-        task['bucket'] = args.to_bucket
-        if task.get('status') != 'open' and args.to_bucket != 'archive':
-            task['status'] = 'open'
-            task['completed_at'] = None
-        bump_task(task)
-    save_data(data)
-    render()
-    auto_push_after_write([task['id'] for task in tasks], 'task_cli.move', sync=args.sync_apple_reminders)
-    print(f"moved: {len(tasks)} task(s) -> {args.to_bucket}")
+    task_ids = [t['id'] for t in tasks]
+    if hasattr(repo, 'move_tasks'):
+        result = repo.move_tasks(task_ids, args.to_bucket)
+    else:
+        for task_id in task_ids:
+            repo.update_task(task_id, {'bucket': args.to_bucket})
+        result = type('Result', (), {'changed_ids': task_ids})()
+    if args.backend == 'local':
+        render()
+    auto_push_after_write(result.changed_ids, 'task_cli.move', sync=args.sync_apple_reminders, backend=args.backend)
+    print(f"moved: {len(result.changed_ids)} task(s) -> {args.to_bucket}")
 
 
 def cmd_tag(args):
-    data = load_data()
-    tasks = apply_filters(data['tasks'], args)
+    repo = get_repository(args.backend)
+    tasks = repo.list_tasks()
+    tasks = apply_filters(tasks, args)
     if not tasks:
         raise SystemExit('no tasks matched')
-    for task in tasks:
-        tags = set(task.get('tags', []))
-        if args.action == 'add':
-            tags.update(args.tags)
-        elif args.action == 'remove':
-            tags.difference_update(args.tags)
-        elif args.action == 'set':
-            tags = set(args.tags)
-        task['tags'] = sorted(tags)
-        bump_task(task)
-    save_data(data)
-    render()
-    auto_push_after_write([task['id'] for task in tasks], 'task_cli.tag', sync=args.sync_apple_reminders)
-    print(f"tagged: {len(tasks)} task(s)")
+    task_ids = [t['id'] for t in tasks]
+    if hasattr(repo, 'tag_tasks'):
+        result = repo.tag_tasks(task_ids, args.action, args.tags)
+    else:
+        for task_id in task_ids:
+            current = repo.get_task(task_id) if hasattr(repo, 'get_task') else {}
+            tags = set(current.get('tags', []))
+            if args.action == 'add':
+                tags.update(args.tags)
+            elif args.action == 'remove':
+                tags.difference_update(args.tags)
+            elif args.action == 'set':
+                tags = set(args.tags)
+            repo.update_task(task_id, {'tags': sorted(tags)})
+        result = type('Result', (), {'changed_ids': task_ids})()
+    if args.backend == 'local':
+        render()
+    auto_push_after_write(result.changed_ids, 'task_cli.tag', sync=args.sync_apple_reminders, backend=args.backend)
+    print(f"tagged: {len(result.changed_ids)} task(s)")
 
 
 def add_sync_flag(parser):
@@ -347,6 +230,9 @@ def add_sync_flag(parser):
 
 def build_parser():
     parser = argparse.ArgumentParser(description='GTD task CLI')
+    parser.add_argument('--backend', choices=['local', 'api'], 
+                        default=os.getenv('GTD_TASK_BACKEND', 'local'),
+                        help='选择 backend：local（本地JSON）或 api（服务端API），默认从环境变量 GTD_TASK_BACKEND 读取')
     sub = parser.add_subparsers(dest='cmd', required=True)
 
     p = sub.add_parser('add')
