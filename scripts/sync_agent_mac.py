@@ -44,12 +44,21 @@ SYNC_STATE_PATH = ROOT / 'sync' / 'mac-sync-state.json'
 APPLE_SCRIPT_PATH = ROOT / 'sync_apple_reminders_mac.applescript'
 LOG_PATH = ROOT / 'logs' / 'mac-sync-agent.log'
 
-# Apple List 映射
+# Apple List 映射（按用户 Apple Reminders 实际分类）
 BUCKET_TO_LIST = {
-    'today': 'GTD Today',
-    'tomorrow': 'GTD Tomorrow',
-    'future': 'GTD Future',
-    'archive': 'GTD Archive',
+    'today': '下一步行动@NextAction',
+    'tomorrow': '下一步行动@NextAction',
+    'future': '可能的事@Maybe',
+    'archive': '可能的事@Maybe',
+}
+
+# Category 到 Apple List 的映射
+CATEGORY_TO_LIST = {
+    'inbox': '收集箱@Inbox',
+    'next_action': '下一步行动@NextAction',
+    'project': '项目@Project',
+    'waiting_for': '等待@Waiting For',
+    'maybe': '可能的事@Maybe',
 }
 
 
@@ -223,8 +232,10 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     task_id = task.get('id')
     title = task.get('title', '')
     bucket = task.get('bucket', 'today')
+    category = task.get('category', 'next_action')
     note = task.get('note', '')
-    list_name = BUCKET_TO_LIST.get(bucket, 'GTD Today')
+    # 优先使用 category 映射，否则用 bucket 映射
+    list_name = CATEGORY_TO_LIST.get(category, BUCKET_TO_LIST.get(bucket, '下一步行动@NextAction'))
     
     # 获取现有的 Apple mapping（如果有）
     # 这里简化处理，实际应该查询本地缓存或服务端
