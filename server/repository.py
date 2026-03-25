@@ -2,10 +2,18 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from datetime import datetime
 from typing import Any, Dict, List, Optional
+from zoneinfo import ZoneInfo
 
 from server.db import get_conn
 from server.models import AppleMapping, SyncClient, Task, TaskChange
+
+TZ = ZoneInfo('Asia/Shanghai')
+
+
+def now_iso() -> str:
+    return datetime.now(TZ).isoformat(timespec='seconds')
 
 
 class TaskRepository:
