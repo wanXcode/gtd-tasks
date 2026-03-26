@@ -59,6 +59,8 @@ class AppHandler(BaseHTTPRequestHandler):
                     limit=int((q.get('limit') or [200])[0] or 200),
                 ),
             )
+        if parsed.path == '/api/apple/mappings':
+            return json_response(self, self.task_service.list_apple_mappings())
         return json_response(self, {'error': 'not found'}, status=404)
 
     def do_POST(self):
