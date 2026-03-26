@@ -206,14 +206,22 @@ end tell
 '''
     elif action == 'get_completed':
         # 获取已完成的 reminders（用于回写）
-        # 获取最近 24 小时内完成的任务
+        # 只查询 GTD 相关的列表，避免遍历全部 reminders 导致超时
         script = '''
 tell application "Reminders"
     set completedReminders to {}
-    repeat with r in reminders
-        if completed of r is true and modification date of r > (current date) - 24 * hours then
-            set end of completedReminders to {id:(id of r), name:(name of r), completed_date:(completion date of r)}
-        end if
+    set gtdLists to {"收集箱@Inbox", "下一步行动@NextAction", "项目@Project", "等待@Waiting For", "可能的事@Maybe"}
+    repeat with listName in gtdLists
+        try
+            set targetList to list listName
+            repeat with r in reminders of targetList
+                if completed of r is true and modification date of r > (current date) - 24 * hours then
+                    set end of completedReminders to {id:(id of r), name:(name of r), completed_date:(completion date of r)}
+                end if
+            end repeat
+        on error
+            -- 列表不存在则跳过
+        end try
     end repeat
     return completedReminders
 end tell
@@ -226,7 +234,7 @@ end tell
         ['osascript', '-e', script],
         capture_output=True,
         text=True,
-        timeout=30,
+        timeout=60,
     )
     if result.returncode != 0:
         raise RuntimeError(f'AppleScript failed: {result.stderr}')
