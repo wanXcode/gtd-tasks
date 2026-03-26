@@ -282,6 +282,16 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     
     try:
         if action == 'create':
+            # 如果已有 mapping，说明已同步过，避免重复创建
+            if task_id and task_id in mappings:
+                existing_apple_id = mappings[task_id]
+                return {
+                    'status': 'skipped',
+                    'reason': 'already_mapped',
+                    'task_id': task_id,
+                    'apple_reminder_id': existing_apple_id,
+                }
+            
             # 创建新 reminder
             result = run_apple_script('create', title=title, list_name=list_name, note=note)
             apple_id = result.get('stdout', '').strip()
