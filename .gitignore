@@ -14,3 +14,6 @@ sync/apple-reminders-mac-runtime-state.json
 sync/mac-apple-mappings.json
 sync/mac-sync-state.json
 sync/mac-sync-state.json.backup
+
+sync/apple-reminders-completed-applied.json
+sync/apple-reminders-completed-events.json
