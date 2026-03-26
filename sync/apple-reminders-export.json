@@ -1,12 +1,12 @@
 {
   "version": "0.3.1",
   "timezone": "Asia/Shanghai",
-  "generated_at": "2026-03-25T10:51:55.397153+08:00",
+  "generated_at": "2026-03-26T22:53:33.623619+08:00",
   "source": {
     "tasks_file": "data/tasks.json",
     "mapping_file": "config/apple_reminders_mapping.json",
-    "business_date": "2026-03-24",
-    "source_updated_at": "2026-03-24T22:09:41+08:00",
+    "business_date": "2026-03-25",
+    "source_updated_at": "2026-03-25T08:35:07+08:00",
     "requested_task_ids": [],
     "changed_only": false
   },
@@ -71,23 +71,24 @@
       "gtd_id": "tsk_20260317_002",
       "title": "领游（增长中心）年度规划确认",
       "note": "",
-      "status": "open",
+      "status": "done",
       "bucket": "today",
       "quadrant": "q1",
       "category": "waiting_for",
       "tags": [],
-      "updated_at": "2026-03-17T00:00:00+08:00",
+      "updated_at": "2026-03-25T18:20:53+08:00",
       "sync_version": 1,
-      "sync_action": "upsert",
-      "completed": false,
-      "completed_at": null,
+      "sync_action": "complete",
+      "completed": true,
+      "completed_at": "2026-03-25T18:20:53+08:00",
       "deleted_at": null,
-      "target_list": "等待@Waiting For",
-      "target_list_id": "waiting_for",
-      "target_list_status": "active",
-      "matched_rule_id": "category_waiting_for",
-      "matched_rule_name": "任务已显式标记 waiting_for",
-      "due_date": "2026-03-24",
+      "completion_reason": "done",
+      "target_list": null,
+      "target_list_id": null,
+      "target_list_status": null,
+      "matched_rule_id": null,
+      "matched_rule_name": null,
+      "due_date": null,
       "reminder_notes": ""
     },
     {
@@ -110,7 +111,7 @@
       "target_list_status": "active",
       "matched_rule_id": "category_waiting_for",
       "matched_rule_name": "任务已显式标记 waiting_for",
-      "due_date": "2026-03-24",
+      "due_date": "2026-03-25",
       "reminder_notes": ""
     },
     {
@@ -157,7 +158,7 @@
       "target_list_status": "active",
       "matched_rule_id": "category_waiting_for",
       "matched_rule_name": "任务已显式标记 waiting_for",
-      "due_date": "2026-03-25",
+      "due_date": "2026-03-26",
       "reminder_notes": ""
     },
     {
@@ -180,7 +181,7 @@
       "target_list_status": "active",
       "matched_rule_id": "category_project",
       "matched_rule_name": "任务已显式标记 project",
-      "due_date": "2026-03-25",
+      "due_date": "2026-03-26",
       "reminder_notes": "已出初步方案，下周实施"
     },
     {
@@ -661,7 +662,7 @@
       "target_list_status": "active",
       "matched_rule_id": "category_inbox",
       "matched_rule_name": "任务已显式标记 inbox",
-      "due_date": "2026-03-24",
+      "due_date": "2026-03-25",
       "reminder_notes": ""
     },
     {
@@ -684,7 +685,7 @@
       "target_list_status": "active",
       "matched_rule_id": "category_inbox",
       "matched_rule_name": "任务已显式标记 inbox",
-      "due_date": "2026-03-25",
+      "due_date": "2026-03-26",
       "reminder_notes": ""
     },
     {
@@ -710,13 +711,36 @@
       "matched_rule_name": null,
       "due_date": null,
       "reminder_notes": ""
+    },
+    {
+      "gtd_id": "tsk_20260325_001",
+      "title": "上午处理邮件",
+      "note": "",
+      "status": "open",
+      "bucket": "tomorrow",
+      "quadrant": "q2",
+      "category": "next_action",
+      "tags": [],
+      "updated_at": "2026-03-25T08:35:07+08:00",
+      "sync_version": 1,
+      "sync_action": "upsert",
+      "completed": false,
+      "completed_at": null,
+      "deleted_at": null,
+      "target_list": "下一步行动@NextAction",
+      "target_list_id": "next_action",
+      "target_list_status": "active",
+      "matched_rule_id": "category_next_action",
+      "matched_rule_name": "任务已显式标记 next_action",
+      "due_date": "2026-03-26",
+      "reminder_notes": ""
     }
   ],
   "summary": {
-    "exported_task_count": 28,
+    "exported_task_count": 29,
     "exported_open_tasks": 10,
-    "exported_completion_tasks": 18,
-    "total_source_tasks": 28,
-    "selected_source_tasks": 28
+    "exported_completion_tasks": 19,
+    "total_source_tasks": 29,
+    "selected_source_tasks": 29
   }
 }
