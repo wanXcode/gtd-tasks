@@ -41,6 +41,7 @@ TZ = ZoneInfo('Asia/Shanghai')
 DEFAULT_API_URL = os.getenv('GTD_API_BASE_URL', 'https://gtd.5666.net')
 DEFAULT_CLIENT_ID = os.getenv('GTD_SYNC_CLIENT_ID', 'mac-primary')
 SYNC_STATE_PATH = ROOT / 'sync' / 'mac-sync-state.json'
+MAPPING_PATH = ROOT / 'sync' / 'mac-apple-mappings.json'
 APPLE_SCRIPT_PATH = ROOT / 'sync_apple_reminders_mac.applescript'
 LOG_PATH = ROOT / 'logs' / 'mac-sync-agent.log'
 
@@ -93,6 +94,22 @@ def save_sync_state(state: Dict[str, Any]) -> None:
     SYNC_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(SYNC_STATE_PATH, 'w', encoding='utf-8') as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
+        f.write('\n')
+
+
+def load_mappings() -> Dict[str, str]:
+    """加载 task_id -> apple_reminder_id 映射"""
+    if MAPPING_PATH.exists():
+        with open(MAPPING_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {}
+
+
+def save_mappings(mappings: Dict[str, str]) -> None:
+    """保存 task_id -> apple_reminder_id 映射"""
+    MAPPING_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(MAPPING_PATH, 'w', encoding='utf-8') as f:
+        json.dump(mappings, f, ensure_ascii=False, indent=2)
         f.write('\n')
 
 
@@ -260,20 +277,26 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     # 获取现有的 Apple mapping（如果有）
     # 这里简化处理，实际应该查询本地缓存或服务端
     
+    # 加载本地 mapping
+    mappings = load_mappings()
+    
     try:
         if action == 'create':
             # 创建新 reminder
             result = run_apple_script('create', title=title, list_name=list_name, note=note)
             apple_id = result.get('stdout', '').strip()
-            # 回写映射关系到服务端
+            # 保存到本地 mapping
             if apple_id and task_id:
+                mappings[task_id] = apple_id
+                save_mappings(mappings)
+                log(f'Saved local mapping: {task_id} -> {apple_id}')
+                # 同时回写到服务端
                 try:
                     api_request('POST', '/api/apple/mappings', {
                         'mappings': [{'task_id': task_id, 'apple_reminder_id': apple_id}]
                     }, base_url=DEFAULT_API_URL)
-                    log(f'Saved mapping: {task_id} -> {apple_id}')
                 except Exception as e:
-                    log(f'Failed to save mapping: {e}')
+                    log(f'Failed to save mapping to server: {e}')
             return {'status': 'created', 'task_id': task_id, 'apple_reminder_id': apple_id}
         
         elif action == 'update':
@@ -297,35 +320,71 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
         return {'status': 'error', 'reason': str(exc)}
 
 
-def push_apple_completed_to_server(base_url: str = DEFAULT_API_URL) -> Dict[str, Any]:
-    """将 Apple Reminders 的 completed 状态回写到服务端"""
+def check_reminder_completed(apple_reminder_id: str) -> bool:
+    """检查单个 reminder 是否已完成"""
     try:
-        # 获取最近完成的 reminders
-        result = run_apple_script('get_completed')
+        script = f'''
+tell application "Reminders"
+    try
+        set r to first reminder whose id is "{apple_reminder_id}"
+        return completed of r
+    on error
+        return "not_found"
+    end try
+end tell
+'''
+        result = subprocess.run(
+            ['osascript', '-e', script],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0:
+            stdout = result.stdout.strip()
+            if stdout == 'true':
+                return True
+            elif stdout == 'false':
+                return False
+        return None
+    except Exception:
+        return None
+
+
+def push_apple_completed_to_server(base_url: str = DEFAULT_API_URL) -> Dict[str, Any]:
+    """将 Apple Reminders 的 completed 状态回写到服务端
+    
+    优化版：只查询本地 mapping 中的 reminder，避免遍历全部列表
+    """
+    try:
+        # 加载本地 mapping
+        mappings = load_mappings()
+        if not mappings:
+            log('No local mappings, skipping completed check')
+            return {'status': 'ok', 'processed': 0, 'reason': 'no_mappings'}
         
-        # 解析 AppleScript 返回结果
-        # AppleScript 返回格式类似: {id:"xxx", name:"yyy", completed_date:date "..."}
-        stdout = result.get('stdout', '').strip()
-        log(f'AppleScript get_completed result: {stdout[:200]}...')
+        log(f'Checking {len(mappings)} reminders for completed status')
         
-        # 简化解析：提取 reminder id
-        items = []
-        if stdout and stdout != 'missing value':
-            # 尝试从结果中提取 id
-            # AppleScript 返回格式: id:x-apple-reminder://..., name:..., completed_date:...
-            import re
-            # 匹配 id 字段（格式: id:x-apple-reminder://UUID）
-            ids = re.findall(r'id:(x-apple-reminder://[^",\s]+)', stdout)
-            for rid in ids:
-                items.append({
-                    'apple_reminder_id': rid,
+        # 只查询 mapping 中的 reminder
+        completed_items = []
+        for task_id, apple_id in list(mappings.items()):
+            is_completed = check_reminder_completed(apple_id)
+            if is_completed is True:
+                completed_items.append({
+                    'apple_reminder_id': apple_id,
                     'completed_at': datetime.now(TZ).isoformat(),
                 })
+                log(f'Reminder {apple_id} is completed')
+            elif is_completed is None:
+                log(f'Reminder {apple_id} not found or error, removing from mapping')
+                del mappings[task_id]
         
-        log(f'Parsed completed items: {len(items)}')
+        # 保存更新后的 mapping（移除已删除的）
+        save_mappings(mappings)
         
-        if items:
-            response = api_request('POST', '/api/apple/completed', {'items': items}, base_url=base_url)
+        log(f'Found {len(completed_items)} completed reminders')
+        
+        if completed_items:
+            response = api_request('POST', '/api/apple/completed', {'items': completed_items}, base_url=base_url)
             return {'status': 'ok', 'processed': response.get('processed', 0)}
         return {'status': 'ok', 'processed': 0, 'reason': 'no_completed_items'}
     
@@ -375,11 +434,10 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: 
     else:
         log('Dry run mode, skipping Apple sync')
     
-    # 4. 回写 Apple completed 到服务端（暂时禁用，避免 AppleScript 超时）
-    # TODO: 优化 completed 回写性能后再启用
+    # 4. 回写 Apple completed 到服务端（优化版：只查询本地 mapping）
     if not dry_run:
-        log('Push completed skipped (performance optimization pending)')
-        push_result = {'status': 'skipped', 'reason': 'performance_optimization_pending'}
+        push_result = push_apple_completed_to_server(base_url=base_url)
+        log(f'Push completed result: {push_result}')
     
     # 5. Ack 已消费的变更
     if not dry_run and next_change_id > last_change_id:
