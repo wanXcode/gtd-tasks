@@ -125,17 +125,6 @@ on findReminderAnywhere(gtdId, targetListName, reminderTitle)
 			end try
 		end if
 
-		if gtdId is not "" then
-			repeat with oneList in allLists
-				set listNameText to name of oneList as text
-				set reminderItems to every reminder of oneList
-				repeat with oneReminder in reminderItems
-					set bodyText to my safeReminderBody(oneReminder)
-					if bodyText contains ("[GTD_ID] " & gtdId) then return {oneReminder, listNameText}
-				end repeat
-			end repeat
-		end if
-
 		if reminderTitle is not "" then
 			repeat with oneList in allLists
 				set listNameText to name of oneList as text
@@ -180,11 +169,7 @@ on buildLocalMapRow(gtdId, listName, reminderTitle)
 end buildLocalMapRow
 
 on composeReminderBody(gtdId, notesText)
-	set cleanNotes to my stripGtdMarker(notesText)
-	if gtdId is "" then return cleanNotes
-	set markerLine to "[GTD_ID] " & gtdId
-	if cleanNotes is "" then return markerLine
-	return markerLine & linefeed & linefeed & cleanNotes
+	return my stripGtdMarker(notesText)
 end composeReminderBody
 
 on stripGtdMarker(bodyText)
