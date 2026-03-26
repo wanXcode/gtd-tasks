@@ -2,14 +2,18 @@
 
 由主库自动生成，方便集中查看最近完成 / 取消 / 归档事项。
 
-生成时间：2026-03-24 22:09:41 CST
+生成时间：2026-03-26 23:11:57 CST
 
-已完成：18 项
+已完成：22 项
 已取消：0 项
 已归档：0 项
 
 ## 最近完成
 
+- 给张闯写回信 | done | archive | q2 | tags=ME | note=-
+- 确定新加坡EP安排 | done | archive | q2 | tags=ME | note=-
+- 上午处理邮件 | done | archive | q2 | tags=- | note=-
+- 领游（增长中心）年度规划确认 | done | today | q1 | tags=- | note=-
 - 吃晚饭 | done | archive | q2 | tags=- | note=-
 - 联调测试B-Apple勾选回传 | done | archive | q2 | tags=- | note=联调用：验证 Apple completed -> GTD done 回传
 - 去打大会 33333333333 | done | archive | q2 | tags=- | note=真实闭环测试E
