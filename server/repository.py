@@ -203,6 +203,11 @@ class TaskRepository:
             ).fetchone()
         return AppleMapping.from_row(row) if row else None
 
+    def list_apple_mappings(self) -> list[AppleMapping]:
+        with get_conn(self.db_path) as conn:
+            rows = conn.execute('SELECT * FROM apple_mappings').fetchall()
+        return [AppleMapping.from_row(row) for row in rows]
+
     def save_apple_mapping(self, task_id: str, apple_reminder_id: str) -> None:
         """保存或更新 Apple Reminder ID 映射"""
         with get_conn(self.db_path) as conn:

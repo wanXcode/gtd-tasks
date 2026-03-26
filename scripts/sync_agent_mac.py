@@ -113,6 +113,27 @@ def save_mappings(mappings: Dict[str, str]) -> None:
         f.write('\n')
 
 
+def sync_mappings_from_server(base_url: str = DEFAULT_API_URL) -> Dict[str, str]:
+    """从服务端拉取 apple mappings，并与本地合并"""
+    local = load_mappings()
+    try:
+        resp = api_request('GET', '/api/apple/mappings', base_url=base_url)
+        items = resp.get('items', []) if isinstance(resp, dict) else []
+        merged = dict(local)
+        for item in items:
+            task_id = item.get('task_id')
+            apple_id = item.get('apple_reminder_id')
+            if task_id and apple_id and task_id not in merged:
+                merged[task_id] = apple_id
+        if merged != local:
+            save_mappings(merged)
+            log(f'Synced mappings from server: local={len(local)} merged={len(merged)}')
+        return merged
+    except Exception as exc:
+        log(f'Failed to sync mappings from server: {exc}')
+        return local
+
+
 def api_request(method: str, path: str, payload: Optional[Dict] = None, base_url: str = DEFAULT_API_URL) -> Any:
     """调用服务端 API"""
     import ssl
@@ -412,6 +433,10 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: 
     client_id = state.get('client_id', DEFAULT_CLIENT_ID)
     last_change_id = state.get('last_change_id', 0)
     log(f'Client: {client_id}, Last change_id: {last_change_id}')
+    
+    # 1.5 同步服务端 mappings 到本地，避免 full-sync 重复创建
+    synced_mappings = sync_mappings_from_server(base_url=base_url)
+    log(f'Available mappings: {len(synced_mappings)}')
     
     # 2. 获取任务（全量或增量）
     items = []
