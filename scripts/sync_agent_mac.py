@@ -108,9 +108,10 @@ def api_request(method: str, path: str, payload: Optional[Dict] = None, base_url
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
     
     # 创建 SSL 上下文，禁用证书验证（解决 macOS 证书问题）
-    ssl_context = ssl.create_default_context()
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl.CERT_NONE
+    ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
     
     try:
         with urllib.request.urlopen(req, timeout=30, context=ssl_context) as resp:
