@@ -340,11 +340,13 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: 
             # 全量同步：获取所有 open 任务
             tasks = get_all_open_tasks(base_url=base_url)
             items = [{'action': 'create', 'task': task} for task in tasks]
+            next_change_id = last_change_id  # 全量同步不更新 change_id
             log(f'Got {len(items)} open tasks (full sync)')
         else:
             # 增量同步
             changes_resp = get_changes(last_change_id, base_url=base_url)
             items = changes_resp.get('items', [])
+            next_change_id = changes_resp.get('next_change_id', last_change_id)
             log(f'Got {len(items)} changes')
     except Exception as exc:
         log(f'Failed to get changes: {exc}')
