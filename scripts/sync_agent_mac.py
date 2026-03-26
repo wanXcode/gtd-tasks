@@ -112,8 +112,9 @@ def api_request(method: str, path: str, payload: Optional[Dict] = None, base_url
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl.CERT_NONE
     ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
-    # 允许不安全的重新协商，解决某些服务器的 SSL 握手问题
-    ssl_context.options |= ssl.OP_LEGACY_SERVER_CONNECT
+    # 允许不安全的重新协商，解决某些服务器的 SSL 握手问题（Python 3.12+）
+    if hasattr(ssl, 'OP_LEGACY_SERVER_CONNECT'):
+        ssl_context.options |= ssl.OP_LEGACY_SERVER_CONNECT
     
     try:
         with urllib.request.urlopen(req, timeout=60, context=ssl_context) as resp:
