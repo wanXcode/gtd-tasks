@@ -374,10 +374,11 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: 
     else:
         log('Dry run mode, skipping Apple sync')
     
-    # 4. 回写 Apple completed 到服务端
+    # 4. 回写 Apple completed 到服务端（暂时禁用，避免 AppleScript 超时）
+    # TODO: 优化 completed 回写性能后再启用
     if not dry_run:
-        push_result = push_apple_completed_to_server(base_url=base_url)
-        log(f'Push completed result: {push_result}')
+        log('Push completed skipped (performance optimization pending)')
+        push_result = {'status': 'skipped', 'reason': 'performance_optimization_pending'}
     
     # 5. Ack 已消费的变更
     if not dry_run and next_change_id > last_change_id:
