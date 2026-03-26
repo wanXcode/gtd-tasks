@@ -393,8 +393,7 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: 
 
 def get_all_open_tasks(base_url: str = DEFAULT_API_URL) -> List[Dict[str, Any]]:
     """获取所有待办任务（用于全量同步）"""
-    url = f'{base_url}/api/tasks?status=open&limit=1000'
-    response = api_request('GET', url, base_url=base_url)
+    response = api_request('GET', '/api/tasks?status=open&limit=1000', base_url=base_url)
     return response.get('items', [])
 
 
