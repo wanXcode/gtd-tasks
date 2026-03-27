@@ -40,8 +40,9 @@
 
 ## 数据原则
 
-- `data/tasks.json` 是唯一事实源
-- Markdown 文件全部由脚本自动生成
+- GTD 的唯一事实源是当前配置的主后端（主账号现已收敛为 API-first）；本地 `data/tasks.json` 仅作为运行期 cache
+- Markdown 文件全部由脚本自动生成，属于本地运行视图
+- `data/tasks.json`、`today.md`、`inbox.md`、`done.md`、`weekly/review-latest.md`、`matrix/*.md` 现已视为本地运行产物，不再纳入 Git 版本管理
 - “今天 / 明天 / 下周 / 未来” 等时间判断固定按北京时间
 - 主分类体系统一为 5 类：`inbox / project / next_action / waiting_for / maybe`
 - `bucket` 只保留时间语义（today / tomorrow / future），不再作为主分类体系
