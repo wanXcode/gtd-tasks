@@ -1,3 +1,5 @@
+> 历史阶段文档：这是 v2.0 Phase 1 的实施计划记录，不代表当前线上实现全貌。当前有效口径请优先以 `README.md`、`server/README.md`、`MAC-SYNC-RUNBOOK.md` 为准。
+
 # GTD v2.0 第一阶段开发任务拆解
 
 > 基于 A 方案：服务端作为唯一事实源（Source of Truth）

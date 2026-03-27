@@ -1,3 +1,5 @@
+> 历史阶段文档：这是 v2.0 Phase 1 的 QA / Validation 记录，主要用于保留阶段验收过程。当前有效实现请优先以 `README.md`、`server/README.md`、`MAC-SYNC-RUNBOOK.md` 为准。
+
 # GTD v2.0 Phase 1 QA / Validation
 
 > 范围基于：

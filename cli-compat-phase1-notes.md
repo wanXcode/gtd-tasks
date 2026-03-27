@@ -1,3 +1,5 @@
+> 历史阶段文档：这是 CLI / compatibility Phase 1 改造记录，主要用于保留演进过程。当前有效实现请优先以 `README.md` 与代码实际入口为准。
+
 # CLI / Compatibility 改造说明（Phase 1）
 
 ## 这次先做了什么

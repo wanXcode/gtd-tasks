@@ -1,3 +1,5 @@
+> 历史方案文档：这是 v2.0 服务端主库方案设计稿，主要用于保留设计背景与演进过程。当前有效实现请优先以 `README.md`、`server/README.md`、`MAC-SYNC-RUNBOOK.md` 为准。
+
 # GTD 服务端主库方案技术文档 v2.0
 
 > 对应需求文档：《requirements-v2.0-server-primary.md》
