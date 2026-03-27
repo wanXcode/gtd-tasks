@@ -48,7 +48,7 @@ class TaskService:
             quadrant=payload.quadrant,
             tags=payload.tags,
             note=payload.note,
-            category=payload.category,
+            category=payload.category or 'inbox',
             source=payload.source,
             source_task_id=payload.source_task_id,
             sync_version=1,

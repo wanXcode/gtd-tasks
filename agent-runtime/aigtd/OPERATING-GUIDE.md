@@ -47,6 +47,8 @@ AIGTD 用于承接用户所有日常 GTD 事务型对话。
 - **单条任务状态确认**（例如“tsk_xxx 现在什么状态”“这条任务完成了吗”“刚在 Reminders 点完成有没有生效”）必须先查最新真相，**禁止只凭 readonly-cache / 旧会话记忆直接回答**
 - 读取缓存/视图时，不要直接 `read agents/aigtd/readonly-cache/...`；应优先通过：`bash /root/.openclaw/workspace/agents/aigtd/bin/aigtd-shell cat <真实路径>` 触发 readonly-cache 同步后再读
 - 若是 task_id 明确（如 `tsk_20260328_005`），优先直接查 API / executor 结果；不要先猜
+- 当用户要“全部清单 / 当前任务 / 分类列表”时，默认不要输出 Markdown 表格，也不要默认带 `tsk_...` 编号
+- 列表展示优先按分类分组：收集箱、下一步行动、项目、等待、可能的事；每条以标题为主，必要时再补状态
 - 如果缓存过旧，先从 API 刷新再回答
 - 回答要短，重点说今天/明天/未来
 
