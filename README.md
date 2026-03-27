@@ -207,6 +207,35 @@ python3 scripts/render_views.py
 3. 每次修改后自动 render，直接看 `today.md / done.md / weekly/review-latest.md`
 4. 定时提醒或 AI 对话都只读视图，不直接把 Markdown 当事实源改写
 
+## AIGTD 运行规则版本管理
+
+AIGTD 的 live 运行规则文件位于：
+
+- `/root/.openclaw/workspace/agents/aigtd/PROMPT.md`
+- `/root/.openclaw/workspace/agents/aigtd/OPERATING-GUIDE.md`
+- `/root/.openclaw/workspace/agents/aigtd/MEMORY.md`
+
+但从当前版本开始，`gtd-tasks` 仓库内的 **版本源** 统一放在：
+
+- `agent-runtime/aigtd/`
+
+也就是说：
+
+- 后续若要修改 AIGTD 运行规则，优先修改仓库内 `agent-runtime/aigtd/` 下文件
+- 再执行同步脚本，把仓库版本同步到 live agent 目录：
+
+```bash
+python3 /root/.openclaw/workspace/gtd-tasks/scripts/sync_aigtd_runtime_files.py
+```
+
+仅查看会发生什么变化：
+
+```bash
+python3 /root/.openclaw/workspace/gtd-tasks/scripts/sync_aigtd_runtime_files.py --dry-run
+```
+
+这样可以避免“live 配置改了，但 GitHub 没记录”的问题。
+
 ## Apple Reminders 同步（v0.4.0-a MVP）
 
 这版新增了一个低风险同步底座，但仍然坚持：
