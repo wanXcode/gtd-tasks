@@ -7,6 +7,8 @@ from pathlib import Path
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
 
+LOCAL_API_BASE_URL = 'http://127.0.0.1:8083'
+
 from server.db import init_db
 from server.schemas import SyncClientAck, TaskCreate, TaskUpdate
 from server.services.change_service import ChangeService
@@ -29,9 +31,9 @@ def json_response(handler: BaseHTTPRequestHandler, payload, status: int = 200):
 
 def refresh_server_local_cache() -> dict:
     env = os.environ.copy()
-    env['GTD_API_BASE_URL'] = DEFAULT_API_BASE_URL
+    env['GTD_API_BASE_URL'] = LOCAL_API_BASE_URL
     pull = subprocess.run(
-        ['python3', str(PULL_CACHE_SCRIPT), '--base-url', DEFAULT_API_BASE_URL],
+        ['python3', str(PULL_CACHE_SCRIPT), '--base-url', LOCAL_API_BASE_URL],
         capture_output=True,
         text=True,
         timeout=60,
@@ -51,8 +53,11 @@ def refresh_server_local_cache() -> dict:
         raise RuntimeError(f'render_views failed: {render.stderr.strip() or render.stdout.strip()}')
 
     return {
+        'base_url': LOCAL_API_BASE_URL,
         'pull_tasks_cache': pull.stdout.strip(),
+        'pull_tasks_cache_stderr': pull.stderr.strip(),
         'render_views': render.stdout.strip(),
+        'render_views_stderr': render.stderr.strip(),
     }
 
 
@@ -141,8 +146,10 @@ class AppHandler(BaseHTTPRequestHandler):
             if results:
                 try:
                     response['cache_refresh'] = refresh_server_local_cache()
+                    print(f"[apple.completed] cache refresh ok: {response['cache_refresh']}", flush=True)
                 except Exception as exc:
                     response['cache_refresh_error'] = str(exc)
+                    print(f"[apple.completed] cache refresh failed: {exc}", flush=True)
             return json_response(self, response)
         if parsed.path == '/api/apple/mappings':
             # 保存 Apple Reminder ID 到 Task ID 的映射
