@@ -17,3 +17,12 @@ sync/mac-sync-state.json.backup
 
 sync/apple-reminders-completed-applied.json
 sync/apple-reminders-completed-events.json
+sync/tmp/
+
+data/tasks.json
+data/inbox.json
+today.md
+inbox.md
+done.md
+weekly/review-latest.md
+matrix/*.md
