@@ -44,6 +44,8 @@ SYNC_STATE_PATH = ROOT / 'sync' / 'mac-sync-state.json'
 MAPPING_PATH = ROOT / 'sync' / 'mac-apple-mappings.json'
 APPLE_SCRIPT_PATH = ROOT / 'sync_apple_reminders_mac.applescript'
 LOG_PATH = ROOT / 'logs' / 'mac-sync-agent.log'
+PULL_CACHE_SCRIPT = ROOT / 'scripts' / 'pull_tasks_cache.py'
+RENDER_VIEWS_SCRIPT = ROOT / 'scripts' / 'render_views.py'
 
 # Apple List 映射（按用户 Apple Reminders 实际分类）
 BUCKET_TO_LIST = {
@@ -199,6 +201,36 @@ def ack_changes(client_id: str, last_change_id: int, base_url: str = DEFAULT_API
 def apple_script_exists() -> bool:
     """检查 AppleScript 是否存在"""
     return APPLE_SCRIPT_PATH.exists()
+
+
+def refresh_local_cache_from_api(base_url: str = DEFAULT_API_URL) -> Dict[str, str]:
+    """刷新本地 API cache 与渲染视图，供 AIGTD 查询使用"""
+    env = os.environ.copy()
+    env['GTD_API_BASE_URL'] = base_url
+    pull = subprocess.run(
+        ['python3', str(PULL_CACHE_SCRIPT), '--base-url', base_url],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env=env,
+    )
+    if pull.returncode != 0:
+        raise RuntimeError(f'pull_tasks_cache failed: {pull.stderr.strip() or pull.stdout.strip()}')
+
+    render = subprocess.run(
+        ['python3', str(RENDER_VIEWS_SCRIPT)],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env=env,
+    )
+    if render.returncode != 0:
+        raise RuntimeError(f'render_views failed: {render.stderr.strip() or render.stdout.strip()}')
+
+    return {
+        'pull_tasks_cache': pull.stdout.strip(),
+        'render_views': render.stdout.strip(),
+    }
 
 
 def run_apple_script(action: str, **params) -> Dict[str, Any]:
@@ -483,7 +515,16 @@ def push_apple_completed_to_server(base_url: str = DEFAULT_API_URL) -> Dict[str,
         
         if completed_items:
             response = api_request('POST', '/api/apple/completed', {'items': completed_items}, base_url=base_url)
-            return {'status': 'ok', 'processed': response.get('processed', 0)}
+            result = {'status': 'ok', 'processed': response.get('processed', 0)}
+            if result['processed'] > 0:
+                try:
+                    refresh_result = refresh_local_cache_from_api(base_url=base_url)
+                    result['cache_refresh'] = refresh_result
+                    log(f"Refreshed local cache after completed push: {refresh_result}")
+                except Exception as refresh_exc:
+                    result['cache_refresh_error'] = str(refresh_exc)
+                    log(f'Refresh local cache after completed push failed: {refresh_exc}')
+            return result
         return {'status': 'ok', 'processed': 0, 'reason': 'no_completed_items'}
     
     except Exception as exc:
