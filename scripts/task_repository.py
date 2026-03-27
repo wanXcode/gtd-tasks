@@ -136,7 +136,8 @@ class LocalJsonTaskRepository(TaskRepository):
             return 'waiting_for'
         if any(keyword in text for keyword in waiting_keywords):
             return 'waiting_for'
-        if bucket == 'future':
+        maybe_keywords = ['以后', '先放未来', '晚点', '有空再', '再说', '也许', '可能']
+        if any(keyword in text for keyword in maybe_keywords):
             return 'maybe'
         if any(keyword in text for keyword in project_keywords):
             return 'project'

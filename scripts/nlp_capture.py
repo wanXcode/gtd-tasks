@@ -164,7 +164,7 @@ def detect_category(text: str, bucket: str, tags):
         return 'waiting_for'
     if any(hint in text for hint in CATEGORY_HINTS['waiting_for']):
         return 'waiting_for'
-    if bucket == 'future' and any(hint in text for hint in CATEGORY_HINTS['maybe']):
+    if any(hint in text for hint in CATEGORY_HINTS['maybe']):
         return 'maybe'
     if any(hint in text for hint in CATEGORY_HINTS['project']):
         return 'project'
@@ -172,8 +172,6 @@ def detect_category(text: str, bucket: str, tags):
         return 'next_action'
     if any(hint in text for hint in CATEGORY_HINTS['next_action']):
         return 'next_action'
-    if bucket == 'future':
-        return 'maybe'
     return DEFAULT_CATEGORY
 
 
