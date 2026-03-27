@@ -16,6 +16,7 @@ from task_repository import get_repository, TaskRepository, TaskMutationResult  
 
 DATA = ROOT / 'data' / 'tasks.json'
 RENDER = ROOT / 'scripts' / 'render_views.py'
+PULL_CACHE = ROOT / 'scripts' / 'pull_tasks_cache.py'
 TZ = ZoneInfo('Asia/Shanghai')
 VALID_BUCKETS = ['today', 'tomorrow', 'future', 'archive']
 VALID_QUADRANTS = ['q1', 'q2', 'q3', 'q4']
@@ -38,6 +39,18 @@ def today_str():
 
 def render():
     subprocess.run(['python3', str(RENDER)], check=True)
+
+
+def refresh_api_cache():
+    subprocess.run(['python3', str(PULL_CACHE)], check=True)
+    render()
+
+
+def refresh_after_write(backend: str):
+    if backend == 'api':
+        refresh_api_cache()
+    elif backend == 'local':
+        render()
 
 
 def auto_push_after_write(task_ids, source, sync=False, backend='local'):
@@ -104,8 +117,7 @@ def cmd_add(args):
         category=args.category,
         source='cli',
     )
-    if args.backend == 'local':
-        render()
+    refresh_after_write(args.backend)
     auto_push_after_write([result.task['id']], 'task_cli.add', sync=args.sync_apple_reminders, backend=args.backend)
     print(f"added: {result.task['id']} {result.task['title']}")
 
@@ -132,8 +144,7 @@ def cmd_update(args):
     if args.remove_tags:
         updates['remove_tags'] = args.remove_tags
     result = repo.update_task(args.id, updates)
-    if args.backend == 'local':
-        render()
+    refresh_after_write(args.backend)
     auto_push_after_write([result.task['id']], 'task_cli.update', sync=args.sync_apple_reminders, backend=args.backend)
     print(f"updated: {result.task['id']}")
 
@@ -141,8 +152,7 @@ def cmd_update(args):
 def cmd_done(args):
     repo = get_repository(args.backend)
     result = repo.mark_done(args.id)
-    if args.backend == 'local':
-        render()
+    refresh_after_write(args.backend)
     auto_push_after_write([result.task['id']], 'task_cli.done', sync=args.sync_apple_reminders, backend=args.backend)
     print(f"done: {result.task['id']}")
 
@@ -151,8 +161,7 @@ def cmd_reopen(args):
     repo = get_repository(args.backend)
     bucket = args.bucket if hasattr(args, 'bucket') else None
     result = repo.reopen_task(args.id, bucket=bucket)
-    if args.backend == 'local':
-        render()
+    refresh_after_write(args.backend)
     auto_push_after_write([result.task['id']], 'task_cli.reopen', sync=args.sync_apple_reminders, backend=args.backend)
     print(f"reopened: {result.task['id']}")
 
@@ -160,8 +169,7 @@ def cmd_reopen(args):
 def cmd_delete(args):
     repo = get_repository(args.backend)
     result = repo.delete_task(args.id)
-    if args.backend == 'local':
-        render()
+    refresh_after_write(args.backend)
     auto_push_after_write([result.task['id']], 'task_cli.delete', sync=args.sync_apple_reminders, backend=args.backend)
     print(f"deleted: {result.task['id']}")
 

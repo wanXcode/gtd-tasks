@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / 'data' / 'tasks.json'
 TZ = ZoneInfo('Asia/Shanghai')
 VALID_CATEGORIES = ['inbox', 'project', 'next_action', 'waiting_for', 'maybe']
+DEFAULT_API_BASE_URL = os.getenv('GTD_API_BASE_URL', 'https://gtd.5666.net').rstrip('/')
 DEFAULT_TIMEOUT = float(os.getenv('GTD_API_TIMEOUT', '10'))
 
 
@@ -305,7 +306,7 @@ class ApiTaskRepository(TaskRepository):
     backend_name = 'api'
 
     def __init__(self, base_url: Optional[str] = None, timeout: float = DEFAULT_TIMEOUT):
-        self.base_url = (base_url or os.getenv('GTD_API_BASE_URL') or '').rstrip('/')
+        self.base_url = (base_url or DEFAULT_API_BASE_URL or '').rstrip('/')
         if not self.base_url:
             raise RepositoryError('GTD_API_BASE_URL is required for api backend')
         self.timeout = timeout
