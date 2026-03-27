@@ -20,9 +20,9 @@
 ├── scripts/
 │   ├── task_cli.py             # 结构化增删改查/批量操作
 │   ├── nlp_capture.py          # 自然语言录入（preview/apply）
-│   ├── export_apple_reminders_sync.py  # 导出 Apple Reminders 同步 payload
-│   ├── sync_apple_reminders.py         # 统一同步入口（export/push/status）
-│   ├── apple_reminders_sync_lib.py     # 同步状态/日志/自动 push 公共层
+│   ├── aigtd_executor.py       # AIGTD 写入/修改统一入口
+│   ├── sync_agent_mac.py       # Mac API-first 同步代理
+│   ├── pull_tasks_cache.py     # 从 API 刷新本地 cache
 │   ├── render_views.py         # 渲染 today/inbox/done/weekly/matrix
 │   └── migrate_legacy.py
 ├── today.md                    # 今日视图
@@ -236,88 +236,25 @@ python3 /root/.openclaw/workspace/gtd-tasks/scripts/sync_aigtd_runtime_files.py 
 
 这样可以避免“live 配置改了，但 GitHub 没记录”的问题。
 
-## Apple Reminders 同步（v0.4.0-a MVP）
+## Apple Reminders 同步（API-first）
 
-这版新增了一个低风险同步底座，但仍然坚持：
+当前 Apple Reminders 同步主链已经收敛为：
 
-- `data/tasks.json` 是唯一事实源
-- 当前只做 **GTD -> Apple Reminders 单向 push**
-- 不碰双向回写
-- 原有手动链路继续可用
-- **推荐架构改为：Linux 更新仓库，Mac 本地 `git pull` 后再执行 AppleScript**
-- **不再推荐 Linux 主动 SSH / rsync / scp 推送到 Mac**
+- GTD API 是唯一事实源
+- Mac 本地通过 `scripts/sync_agent_mac.py` 消费 `/api/changes`
+- Apple Reminders completed 再回写 `/api/apple/completed`
 
-### 统一入口
+核心入口：
 
 ```bash
-python3 scripts/sync_apple_reminders.py --mode export
-python3 scripts/sync_apple_reminders.py --mode sync --dry-run
-python3 scripts/sync_apple_reminders.py --mode status
+python3 scripts/sync_agent_mac.py
+python3 scripts/sync_agent_mac.py --full-sync
+python3 scripts/sync_agent_mac.py --reset-cursor --full-sync
 ```
 
-### 增量导出 / 单任务导出
+更完整的运行、排障、恢复说明，统一见：
 
-```bash
-python3 scripts/export_apple_reminders_sync.py --changed-only
-python3 scripts/export_apple_reminders_sync.py --task-id tsk_20260317_008
-python3 scripts/sync_apple_reminders.py --mode export --task-id tsk_20260317_008
-```
-
-### 自动 push（默认关闭）
-
-默认不会自动 push。可以两种方式开启：
-
-```bash
-python3 scripts/task_cli.py add "给张闯回信" --sync-apple-reminders
-python3 scripts/nlp_capture.py "明天提醒我给张闯回信 #ME" --mode apply --sync-apple-reminders
-```
-
-或者设置环境变量：
-
-```bash
-export GTD_APPLE_REMINDERS_AUTO_PUSH=1
-```
-
-如果当前机器不是 macOS，或没有 `osascript` / Apple Reminders 环境，系统会：
-
-- 正常完成 export
-- 记录状态和日志
-- 把 push 标记为 skipped / failed
-- 不影响主库写入
-
-### Linux 侧 Git 自动提交（默认关闭）
-
-现在可以把 Apple Reminders 导出链路接到 Git，但仍然保持很保守：
-
-- 只允许提交这两个同步文件：
-  - `sync/apple-reminders-export.json`
-  - `sync/apple-reminders-sync-state.json`
-- **不会** 自动提交 `data/tasks.json`、`today.md`、`done.md`、`weekly/*` 等业务文件
-- commit / push 失败只记日志，不影响主流程
-
-推荐环境变量：
-
-```bash
-export GTD_APPLE_REMINDERS_GIT_SYNC_ENABLED=1
-export GTD_APPLE_REMINDERS_GIT_PUSH_ENABLED=1
-# 可选
-export GTD_APPLE_REMINDERS_GIT_REMOTE=origin
-export GTD_APPLE_REMINDERS_GIT_BRANCH=main
-```
-
-手动测试：
-
-```bash
-python3 scripts/sync_apple_reminders.py --mode export --git-sync --dry-run --pretty
-python3 scripts/git_sync_export.py --commit --dry-run --pretty
-python3 scripts/git_sync_export.py --commit --push --pretty
-```
-
-说明：
-
-- `--git-sync` / `--commit` 只做安全范围内的 `git add + commit`
-- `--git-push` / `--push` 才会继续 `git push`
-- dry-run 只报告将要提交哪些文件，不会改 Git 状态
+- `MAC-SYNC-RUNBOOK.md`
 
 ### Mac API-first 同步方案（推荐）
 
