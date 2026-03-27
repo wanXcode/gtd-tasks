@@ -1,23 +1,20 @@
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
 
-LOCAL_API_BASE_URL = 'http://127.0.0.1:8083'
-
 from server.db import init_db
 from server.schemas import SyncClientAck, TaskCreate, TaskUpdate
 from server.services.change_service import ChangeService
 from server.services.task_service import TaskNotFoundError, TaskService
+from scripts.pull_tasks_cache import dump_cache
 
 ROOT = Path(__file__).resolve().parent.parent
-PULL_CACHE_SCRIPT = ROOT / 'scripts' / 'pull_tasks_cache.py'
+CACHE_FILE = ROOT / 'data' / 'tasks.json'
 RENDER_VIEWS_SCRIPT = ROOT / 'scripts' / 'render_views.py'
-DEFAULT_API_BASE_URL = os.getenv('GTD_API_BASE_URL', 'https://gtd.5666.net')
 
 
 def json_response(handler: BaseHTTPRequestHandler, payload, status: int = 200):
@@ -29,33 +26,24 @@ def json_response(handler: BaseHTTPRequestHandler, payload, status: int = 200):
     handler.wfile.write(body)
 
 
-def refresh_server_local_cache() -> dict:
-    env = os.environ.copy()
-    env['GTD_API_BASE_URL'] = LOCAL_API_BASE_URL
-    pull = subprocess.run(
-        ['python3', str(PULL_CACHE_SCRIPT), '--base-url', LOCAL_API_BASE_URL],
-        capture_output=True,
-        text=True,
-        timeout=60,
-        env=env,
-    )
-    if pull.returncode != 0:
-        raise RuntimeError(f'pull_tasks_cache failed: {pull.stderr.strip() or pull.stdout.strip()}')
+def refresh_server_local_cache(task_service: TaskService) -> dict:
+    items = task_service.list_tasks().get('items', [])
+    CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    dump_cache(items, CACHE_FILE)
 
     render = subprocess.run(
         ['python3', str(RENDER_VIEWS_SCRIPT)],
         capture_output=True,
         text=True,
         timeout=60,
-        env=env,
+        cwd=str(ROOT),
     )
     if render.returncode != 0:
         raise RuntimeError(f'render_views failed: {render.stderr.strip() or render.stdout.strip()}')
 
     return {
-        'base_url': LOCAL_API_BASE_URL,
-        'pull_tasks_cache': pull.stdout.strip(),
-        'pull_tasks_cache_stderr': pull.stderr.strip(),
+        'cache_file': str(CACHE_FILE),
+        'cached_count': len(items),
         'render_views': render.stdout.strip(),
         'render_views_stderr': render.stderr.strip(),
     }
@@ -145,7 +133,7 @@ class AppHandler(BaseHTTPRequestHandler):
             response = {'processed': len(results), 'results': results}
             if results:
                 try:
-                    response['cache_refresh'] = refresh_server_local_cache()
+                    response['cache_refresh'] = refresh_server_local_cache(self.task_service)
                     print(f"[apple.completed] cache refresh ok: {response['cache_refresh']}", flush=True)
                 except Exception as exc:
                     response['cache_refresh_error'] = str(exc)
