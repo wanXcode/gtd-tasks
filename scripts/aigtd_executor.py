@@ -9,6 +9,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+import re
 
 ROOT = Path(__file__).resolve().parent.parent
 TASK_CLI = ROOT / 'scripts' / 'task_cli.py'
@@ -18,6 +19,7 @@ LOG_DIR = ROOT / 'logs'
 LOG_PATH = LOG_DIR / 'aigtd-executor.log'
 TOUCHPOINT = ROOT / 'scripts' / 'aigtd_touchpoint.py'
 DEFAULT_API_BASE_URL = os.getenv('GTD_API_BASE_URL', 'https://gtd.5666.net')
+TASK_ID_RE = re.compile(r'^tsk_\d{8}_\d+$')
 
 
 class ExecutorError(RuntimeError):
@@ -73,27 +75,71 @@ def emit_touchpoint(event: str, action: str, *, env: dict[str, str], title: str 
     subprocess.run(cmd, check=False, text=True, capture_output=True, env=env)
 
 
-def find_task_by_title(title: str, *, env: dict[str, str]) -> dict[str, Any] | None:
-    proc = run([
-        'python3', str(TASK_CLI), '--backend', 'api', 'list', '--text', title, '--limit', '20', '--verbose'
-    ], env=env)
-    lines = [line.strip() for line in proc.stdout.splitlines() if line.strip()]
-    needle = title.strip()
-    for line in lines:
-        if ' | ' not in line or needle not in line:
+def parse_task_list_output(text: str) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    for raw in text.splitlines():
+        line = raw.strip()
+        if ' | ' not in line:
             continue
         parts = line.split(' | ', 5)
         if len(parts) < 6:
             continue
-        return {
+        items.append({
             'id': parts[0],
             'status': parts[1],
             'category': parts[2],
             'bucket': parts[3],
             'quadrant': parts[4],
             'title': parts[5],
-        }
+        })
+    return items
+
+
+def list_tasks_by_text(text: str, *, env: dict[str, str], limit: int = 20) -> list[dict[str, Any]]:
+    proc = run([
+        'python3', str(TASK_CLI), '--backend', 'api', 'list', '--text', text, '--limit', str(limit), '--verbose'
+    ], env=env)
+    return parse_task_list_output(proc.stdout)
+
+
+def find_task_by_title(title: str, *, env: dict[str, str]) -> dict[str, Any] | None:
+    needle = title.strip()
+    if not needle:
+        return None
+    candidates = list_tasks_by_text(needle, env=env)
+    exact = [item for item in candidates if (item.get('title') or '').strip() == needle]
+    if exact:
+        return exact[0]
+    for item in candidates:
+        if needle in (item.get('title') or ''):
+            return item
     return None
+
+
+def resolve_task_reference(ref: str, *, env: dict[str, str]) -> dict[str, Any]:
+    ref = (ref or '').strip()
+    if not ref:
+        raise ExecutorError('task reference is required')
+    if TASK_ID_RE.match(ref):
+        return {'id': ref, 'matched_by': 'task_id'}
+
+    candidates = list_tasks_by_text(ref, env=env)
+    visible = [item for item in candidates if item.get('status') != 'deleted']
+    exact = [item for item in visible if (item.get('title') or '').strip() == ref]
+    if len(exact) == 1:
+        return {'id': exact[0]['id'], 'matched_by': 'exact_title', 'task': exact[0]}
+    if len(exact) > 1:
+        sample = ', '.join(f"{item['id']}:{item['title']}" for item in exact[:5])
+        raise ExecutorError(f'task reference is ambiguous: {ref} -> {sample}')
+
+    contains = [item for item in visible if ref in (item.get('title') or '')]
+    if len(contains) == 1:
+        return {'id': contains[0]['id'], 'matched_by': 'title_contains', 'task': contains[0]}
+    if len(contains) > 1:
+        sample = ', '.join(f"{item['id']}:{item['title']}" for item in contains[:5])
+        raise ExecutorError(f'task reference is ambiguous: {ref} -> {sample}')
+
+    raise ExecutorError(f'task not found by reference: {ref}')
 
 
 def execute_action(action: str, args: argparse.Namespace, *, env: dict[str, str]) -> dict[str, Any]:
@@ -101,7 +147,15 @@ def execute_action(action: str, args: argparse.Namespace, *, env: dict[str, str]
     verify: dict[str, Any] = {'lookup': None}
     intent_title = getattr(args, 'title', None)
     intent_id = getattr(args, 'id', None)
-    emit_touchpoint('intent', action, env=env, title=intent_title, task_id=intent_id)
+    resolved_ref: dict[str, Any] | None = None
+    resolved_id = intent_id
+
+    if action in {'update', 'done', 'reopen', 'delete'}:
+        resolved_ref = resolve_task_reference(intent_id, env=env)
+        resolved_id = resolved_ref['id']
+        args.id = resolved_id
+
+    emit_touchpoint('intent', action, env=env, title=intent_title, task_id=resolved_id)
 
     if action == 'add':
         cmd += ['add', args.title, '--bucket', args.bucket, '--quadrant', args.quadrant]
@@ -147,6 +201,9 @@ def execute_action(action: str, args: argparse.Namespace, *, env: dict[str, str]
 
     if action == 'add':
         verify['lookup'] = find_task_by_title(args.title, env=env)
+    elif resolved_ref is not None:
+        verify['resolved_reference'] = resolved_ref
+        verify['lookup'] = resolved_ref.get('task') or {'id': resolved_ref['id']}
     elif getattr(args, 'id', None):
         verify['lookup'] = find_task_by_title(args.id, env=env)
 
