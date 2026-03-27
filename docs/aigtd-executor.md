@@ -34,13 +34,13 @@
 python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_executor.py add "给哥哥订周五机票"
 ```
 
-### 兼容旧入口
+### 兼容旧入口（不推荐作为主入口）
 
 ```bash
 python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_api_sync.py add "给哥哥订周五机票"
 ```
 
-旧入口仍可用，但现在只是 wrapper，会转发到 `aigtd_executor.py`。
+旧入口仍可用，但现在只是 **兼容 wrapper**，会转发到 `aigtd_executor.py`。后续文档和运行规则都应以 `aigtd_executor.py` 作为唯一主入口。
 
 ## 支持动作
 
@@ -185,7 +185,7 @@ grep -n "给哥哥订周五机票" /root/.openclaw/workspace/gtd-tasks/data/task
 
 为了确认“自然对话到底有没有接到 executor”，现在额外提供：
 
-### 1) touchpoint 日志
+### 1) touchpoint 日志（观测用途，非主入口）
 
 每次 executor 触发时，会额外写：
 
@@ -201,7 +201,7 @@ grep -n "给哥哥订周五机票" /root/.openclaw/workspace/gtd-tasks/data/task
 
 如果上层会话愿意传入环境变量 `AIGTD_SESSION_KEY`，日志里还会带上 session key，方便把飞书会话和执行链路对上。
 
-### 2) adoption 验证脚本
+### 2) adoption 验证脚本（诊断/审计用途）
 
 ```bash
 python3 /root/.openclaw/workspace/gtd-tasks/scripts/verify_aigtd_executor_adoption.py

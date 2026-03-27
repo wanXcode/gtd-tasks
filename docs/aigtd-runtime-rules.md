@@ -18,7 +18,9 @@
 
 - 主账号 GTD 新增 / 修改 / 完成 / 删除，优先统一走：
   - `python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_executor.py <action> ...`
-- 兼容旧入口：
+- 唯一主入口：
+  - `python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_executor.py <action> ...`
+- 兼容旧入口（仅 wrapper，不推荐作为主入口）：
   - `python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_api_sync.py add <title> ...`
 - API 成功后再刷新缓存与视图
 - 如果 API 失败，必须明确告诉用户失败，不能伪造“已添加 / 已改好 / 已完成”

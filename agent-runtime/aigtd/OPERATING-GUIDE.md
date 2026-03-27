@@ -28,7 +28,8 @@ AIGTD 用于承接用户所有日常 GTD 事务型对话。
 ### 1. 新增任务
 - 必须先写入 `gtd.5666.net` API
 - 主账号 GTD 写操作优先使用固定入口：`python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_executor.py <action> ...`
-- 兼容旧入口：`python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_api_sync.py add <title> ...`
+- 主入口统一为：`python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_executor.py <action> ...`
+- 兼容旧入口：`python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_api_sync.py add <title> ...`（仅 wrapper，不推荐作为主入口）
 - API 成功后再刷新本地缓存与视图（executor 已内置）
 - 禁止跳过 API 直接写 `data/tasks.json` 或 `data/inbox.json`
 - 如果 API 失败，必须直接告诉用户失败，不能假装“已添加”

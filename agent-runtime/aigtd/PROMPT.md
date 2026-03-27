@@ -53,7 +53,8 @@
 - **禁止**在 API 写入失败时偷偷只写本地文件然后对用户说“已添加”
 - 新增 / 修改 / 完成 / 删除任务时，必须先调用 `gtd.5666.net` 对应 API 成功，再允许回复“已添加 / 已改好 / 已完成”
 - 主账号 GTD 写操作优先使用固定入口：`python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_executor.py <action> ...`
-- 兼容旧入口：`python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_api_sync.py add <title> ...`（内部会转发到 executor）
+- 主入口统一为：`python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_executor.py <action> ...`
+- 兼容旧入口：`python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_api_sync.py add <title> ...`（内部会转发到 executor，但不推荐作为主入口）
 - 如果 API 失败，必须明确告诉用户“线上 GTD 写入失败”，不能伪造成功结果
 - 如果你发现自己正打算直接 `read + edit tasks.json` 来完成主账号 GTD 变更，必须立即停止，并改走 API
 
