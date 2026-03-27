@@ -319,35 +319,28 @@ python3 scripts/git_sync_export.py --commit --push --pretty
 - `--git-push` / `--push` 才会继续 `git push`
 - dry-run 只报告将要提交哪些文件，不会改 Git 状态
 
-### Mac 主动拉取方案（推荐）
+### Mac API-first 同步方案（推荐）
 
-推荐部署方式：
+当前推荐部署方式已经收敛为 **API-first**：
 
-1. Linux 端更新任务并生成 `sync/apple-reminders-export.json`
-2. Linux 端只把同步产物提交/推送到远端 Git
-3. Mac 本地 launchd 定时执行 `mac/run_apple_reminders_sync.sh`
-4. 包装脚本先尝试 `git fetch + git pull --ff-only`
-5. 成功后再消费本地最新 export，同步到 Apple Reminders
-
-当前 Mac 包装脚本带了几个保守保护：
-
-- `logs/` 已忽略，不再因为日志导致工作区脏
-- pull 前会尝试 `git restore sync/apple-reminders-export.json`，把它当作可重建运行产物处理
-- 如果还有其他 tracked 脏文件，仍然跳过 pull，但继续用当前本地 export
-- `git fetch` / `git pull` 失败时只记日志，不破坏本地仓库
-- 可通过 `GTD_APPLE_REMINDERS_ENABLE_GIT_PULL=0` 关闭自动 pull
-- 可通过 `GTD_APPLE_REMINDERS_GIT_RESTORE_EXPORT_BEFORE_PULL=0` 关闭 pull 前自动 restore export
-- 保持原手动执行方式兼容
+1. 线上 GTD API 作为唯一事实源
+2. Mac 本地 launchd 定时执行 `launchd/com.wan.gtd.sync.plist`
+3. 实际同步入口为 `scripts/sync_agent_mac.py`
+4. Mac 通过 `/api/changes` 拉增量变化并同步到 Apple Reminders
+5. Apple Reminders completed 再回写 `/api/apple/completed`
 
 ### 状态与日志
 
-- 同步状态：`sync/apple-reminders-sync-state.json`
-- 导出文件：`sync/apple-reminders-export.json`
-- 导出语义：open 任务输出 `sync_action=upsert`；显式完成类状态（`done/cancelled/archived/deleted`）输出 `sync_action=complete`，Mac 端仅在收到该显式事件时把 Reminder 标记为 completed，不会因本轮 export 缺席而推断完成
-- 日志文件：`logs/apple-reminders-sync.log`
-- Mac 自动执行说明：`mac/README.md`
-- Mac 包装脚本：`mac/run_apple_reminders_sync.sh`
-- launchd 模板：`mac/com.xiaohua.gtd-apple-reminders-sync.plist`
+- Mac 同步状态：`sync/mac-sync-state.json`
+- Mac 本地 mapping：`sync/mac-apple-mappings.json`
+- Mac 日志文件：`logs/mac-sync-agent.log`
+- Mac 自动执行说明：`MAC-SYNC-RUNBOOK.md`
+- launchd 模板：`launchd/com.wan.gtd.sync.plist`
+- 安装脚本：`launchd/install.sh`
+
+### 旧方案说明
+
+旧的 Git/export 驱动 Mac 同步链（例如 `mac/run_apple_reminders_sync.sh`、`mac/com.xiaohua.gtd-apple-reminders-sync.plist`）已退役，不再作为主同步入口。
 
 ## 版本
 

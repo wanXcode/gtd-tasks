@@ -12,9 +12,8 @@
 
 当前主链路已经明确为：
 - **主链路**：`launchd/com.wan.gtd.sync.plist` → `scripts/sync_agent_mac.py` → `/api/changes` → Apple Reminders
-- **旧兼容链路（待停用）**：`mac/com.xiaohua.gtd-apple-reminders-sync.plist` → `mac/run_apple_reminders_sync.sh` → Git pull / export 文件
 
-结论：日常运行、排查、验收都应优先围绕 `sync_agent_mac.py` 展开；旧 `run_apple_reminders_sync.sh` 不再作为主同步入口。
+结论：日常运行、排查、验收都应优先围绕 `sync_agent_mac.py` 展开。旧 Git/export 驱动链路已退役，不再作为主同步入口。
 
 ## 核心文件
 
@@ -173,8 +172,8 @@ tail -f ~/workspace/gtd-tasks/logs/mac-sync-agent.log
 - `com.wan.gtd.sync`
 
 如果看到以下旧链路重新出现，应停用并归档：
-- `com.xiaohua.gtd-apple-reminders-sync`
-- `com.iosgtd.syncbridge`
+- `com.xiaohua.gtd-apple-reminders-sync`（已停用）
+- `com.iosgtd.syncbridge`（已停用）
 
 检查：
 ```bash
