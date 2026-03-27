@@ -77,16 +77,32 @@ def log(msg: str) -> None:
         f.write(line + '\n')
 
 
-def load_sync_state() -> Dict[str, Any]:
-    """加载本地同步游标"""
-    if SYNC_STATE_PATH.exists():
-        with open(SYNC_STATE_PATH, 'r', encoding='utf-8') as f:
-            return json.load(f)
+def default_sync_state() -> Dict[str, Any]:
     return {
         'client_id': DEFAULT_CLIENT_ID,
         'last_change_id': 0,
         'last_sync_at': None,
     }
+
+
+def load_sync_state() -> Dict[str, Any]:
+    """加载本地同步游标"""
+    if SYNC_STATE_PATH.exists():
+        try:
+            with open(SYNC_STATE_PATH, 'r', encoding='utf-8') as f:
+                state = json.load(f)
+            if not isinstance(state, dict):
+                raise ValueError('state is not a dict')
+            if 'client_id' not in state:
+                state['client_id'] = DEFAULT_CLIENT_ID
+            if not isinstance(state.get('last_change_id', 0), int):
+                state['last_change_id'] = int(state.get('last_change_id') or 0)
+            state.setdefault('last_sync_at', None)
+            return state
+        except Exception as exc:
+            log(f'Invalid sync state file, fallback to default: {exc}')
+            return default_sync_state()
+    return default_sync_state()
 
 
 def save_sync_state(state: Dict[str, Any]) -> None:
@@ -243,6 +259,19 @@ tell application "Reminders"
     return "ok"
 end tell
 '''
+    elif action == 'delete':
+        reminder_id = params.get('reminder_id', '')
+        script = f'''
+tell application "Reminders"
+    try
+        set r to first reminder whose id is "{reminder_id}"
+        delete r
+        return "ok"
+    on error
+        return "not_found"
+    end try
+end tell
+'''
     elif action == 'get_completed':
         # 获取已完成的 reminders（用于回写）
         # 只查询 GTD 相关的列表，避免遍历全部 reminders 导致超时
@@ -331,18 +360,56 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
             return {'status': 'created', 'task_id': task_id, 'apple_reminder_id': apple_id}
         
         elif action == 'update':
-            # 更新现有 reminder（需要知道 apple_reminder_id）
-            # 简化：暂时跳过更新，或依赖本地映射缓存
-            return {'status': 'skipped', 'reason': 'update_not_implemented'}
+            if not task_id or task_id not in mappings:
+                return {'status': 'skipped', 'reason': 'update_missing_mapping', 'task_id': task_id}
+
+            apple_id = mappings[task_id]
+            update_result = run_apple_script('update', reminder_id=apple_id, title=title, note=note)
+            move_result = None
+            try:
+                move_result = run_apple_script('move', reminder_id=apple_id, list_name=list_name)
+            except Exception as move_exc:
+                return {
+                    'status': 'error',
+                    'reason': f'update_move_failed: {move_exc}',
+                    'task_id': task_id,
+                    'apple_reminder_id': apple_id,
+                }
+            return {
+                'status': 'updated',
+                'task_id': task_id,
+                'apple_reminder_id': apple_id,
+                'update_stdout': update_result.get('stdout', ''),
+                'move_stdout': (move_result or {}).get('stdout', ''),
+            }
         
         elif action == 'done':
-            # 标记完成
-            # 需要 apple_reminder_id，暂时跳过
-            return {'status': 'skipped', 'reason': 'done_not_implemented'}
+            if not task_id or task_id not in mappings:
+                return {'status': 'skipped', 'reason': 'done_missing_mapping', 'task_id': task_id}
+
+            apple_id = mappings[task_id]
+            result = run_apple_script('complete', reminder_id=apple_id)
+            return {
+                'status': 'done',
+                'task_id': task_id,
+                'apple_reminder_id': apple_id,
+                'stdout': result.get('stdout', ''),
+            }
         
         elif action == 'delete':
-            # 删除 reminder
-            return {'status': 'skipped', 'reason': 'delete_not_implemented'}
+            if not task_id or task_id not in mappings:
+                return {'status': 'skipped', 'reason': 'delete_missing_mapping', 'task_id': task_id}
+
+            apple_id = mappings[task_id]
+            result = run_apple_script('delete', reminder_id=apple_id)
+            mappings.pop(task_id, None)
+            save_mappings(mappings)
+            return {
+                'status': 'deleted',
+                'task_id': task_id,
+                'apple_reminder_id': apple_id,
+                'stdout': result.get('stdout', ''),
+            }
         
         else:
             return {'status': 'skipped', 'reason': f'unknown_action_{action}'}
@@ -424,14 +491,29 @@ def push_apple_completed_to_server(base_url: str = DEFAULT_API_URL) -> Dict[str,
         return {'status': 'error', 'reason': str(exc)}
 
 
-def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: bool = False) -> Dict[str, Any]:
+def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: bool = False, reset_cursor: bool = False) -> Dict[str, Any]:
     """运行一次完整同步"""
-    log(f'Starting sync (dry_run={dry_run}, full_sync={full_sync})')
+    log(f'Starting sync (dry_run={dry_run}, full_sync={full_sync}, reset_cursor={reset_cursor})')
     
+    state_file_exists = SYNC_STATE_PATH.exists()
     # 1. 加载本地状态
     state = load_sync_state()
     client_id = state.get('client_id', DEFAULT_CLIENT_ID)
     last_change_id = state.get('last_change_id', 0)
+
+    auto_initial_full_sync = False
+    if not state_file_exists:
+        auto_initial_full_sync = True
+        full_sync = True
+        last_change_id = 0
+        state['last_change_id'] = 0
+        log('No sync state found; switching to initial full sync mode')
+
+    if reset_cursor:
+        last_change_id = 0
+        state['last_change_id'] = 0
+        log('Cursor reset requested; forcing last_change_id=0 for this run')
+
     log(f'Client: {client_id}, Last change_id: {last_change_id}')
     
     # 1.5 同步服务端 mappings 到本地，避免 full-sync 重复创建
@@ -486,6 +568,11 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: 
         except Exception as exc:
             log(f'Failed to ack changes: {exc}')
             return {'status': 'error', 'phase': 'ack', 'error': str(exc)}
+    elif not dry_run and full_sync and (auto_initial_full_sync or reset_cursor):
+        state['last_change_id'] = next_change_id
+        state['last_sync_at'] = now_iso()
+        save_sync_state(state)
+        log(f'Persisted sync state after recovery/full-sync run: last_change_id={next_change_id}')
     
     log('Sync completed')
     return {
@@ -508,6 +595,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--dry-run', action='store_true', help='只检查不执行')
     parser.add_argument('--init', action='store_true', help='初始化同步状态')
     parser.add_argument('--full-sync', action='store_true', help='全量同步所有待办任务到 Apple Reminders')
+    parser.add_argument('--reset-cursor', action='store_true', help='将本地 last_change_id 临时重置为 0，用于恢复/补同步')
     return parser
 
 
@@ -517,16 +605,17 @@ def main():
     
     if args.init:
         # 初始化状态
-        state = {
-            'client_id': DEFAULT_CLIENT_ID,
-            'last_change_id': 0,
-            'last_sync_at': None,
-        }
+        state = default_sync_state()
         save_sync_state(state)
         log(f'Initialized sync state: {SYNC_STATE_PATH}')
         return
     
-    result = run_sync(base_url=args.base_url, dry_run=args.dry_run, full_sync=args.full_sync)
+    result = run_sync(
+        base_url=args.base_url,
+        dry_run=args.dry_run,
+        full_sync=args.full_sync,
+        reset_cursor=args.reset_cursor,
+    )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     
     # 返回非零退出码如果出错

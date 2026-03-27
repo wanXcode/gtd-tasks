@@ -10,6 +10,12 @@
 - 本地 mapping 持久化
 - 启动时合并服务端 mappings 到本地，减少重复创建风险
 
+当前主链路已经明确为：
+- **主链路**：`launchd/com.wan.gtd.sync.plist` → `scripts/sync_agent_mac.py` → `/api/changes` → Apple Reminders
+- **旧兼容链路（待停用）**：`mac/com.xiaohua.gtd-apple-reminders-sync.plist` → `mac/run_apple_reminders_sync.sh` → Git pull / export 文件
+
+结论：日常运行、排查、验收都应优先围绕 `sync_agent_mac.py` 展开；旧 `run_apple_reminders_sync.sh` 不再作为主同步入口。
+
 ## 核心文件
 
 ### Mac 本地运行时文件
@@ -40,20 +46,37 @@ python3 scripts/sync_agent_mac.py --full-sync
 - 已有 mapping 的任务会 `skipped`，不会重复创建
 - 没有 mapping 的任务会 `created`
 
-### 3. 查看日志
+### 3. 故障恢复：重置 cursor 并重做一次恢复型同步
 ```bash
-tail -f ~/workspace/gtd-tasks/logs/sync.log
+python3 scripts/sync_agent_mac.py --reset-cursor --full-sync
 ```
 
-### 4. 重载 launchd
+适用场景：
+- 怀疑 `last_change_id` 错位
+- 线上已有任务，但 Mac 没拉下来
+- 迁移/重装后需要补同步
+- 本地状态文件损坏后重建
+
+### 4. 初始化状态文件
+```bash
+python3 scripts/sync_agent_mac.py --init
+```
+
+### 5. 查看日志
+```bash
+tail -f ~/workspace/gtd-tasks/logs/mac-sync-agent.log
+```
+
+### 6. 重载 launchd
 ```bash
 launchctl unload ~/Library/LaunchAgents/com.wan.gtd.sync.plist
 launchctl load ~/Library/LaunchAgents/com.wan.gtd.sync.plist
 ```
 
-### 5. 查看 launchd 状态
+### 7. 查看 launchd 状态
 ```bash
 launchctl list | grep com.wan.gtd.sync
+launchctl print gui/$(id -u)/com.wan.gtd.sync
 ```
 
 ## 验证方法
@@ -112,18 +135,29 @@ Push completed result: {'status': 'ok', 'processed': 1}
 ```bash
 git pull
 ```
+如果错误是偶发性的，后续重试成功且日志出现 `Got N changes` / `Sync completed`，通常可按瞬时网络波动处理。
 
-### 2. full-sync 重复创建
+### 2. 线上已有任务，但 Mac 没拉下来
+优先检查：
+```bash
+cat sync/mac-sync-state.json
+```
+如果怀疑 `last_change_id` 错位，直接执行恢复命令：
+```bash
+python3 scripts/sync_agent_mac.py --reset-cursor --full-sync
+```
+
+### 3. full-sync 重复创建
 先确认本地 mapping 存在：
 ```bash
 ls -la sync/mac-apple-mappings.json
 ```
-必要时执行一次：
+必要时先拉服务端 mapping，再跑：
 ```bash
 python3 scripts/sync_agent_mac.py --full-sync
 ```
 
-### 3. launchd 不工作
+### 4. launchd 不工作
 重载：
 ```bash
 launchctl unload ~/Library/LaunchAgents/com.wan.gtd.sync.plist
@@ -131,5 +165,22 @@ launchctl load ~/Library/LaunchAgents/com.wan.gtd.sync.plist
 ```
 然后看日志：
 ```bash
-tail -f ~/workspace/gtd-tasks/logs/sync.log
+tail -f ~/workspace/gtd-tasks/logs/mac-sync-agent.log
+```
+
+### 5. 旧链路误启动/干扰
+当前应只保留：
+- `com.wan.gtd.sync`
+
+如果看到以下旧链路重新出现，应停用并归档：
+- `com.xiaohua.gtd-apple-reminders-sync`
+- `com.iosgtd.syncbridge`
+
+检查：
+```bash
+launchctl list | grep gtd
+```
+理想状态是只剩：
+```text
+com.wan.gtd.sync
 ```

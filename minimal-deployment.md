@@ -167,7 +167,7 @@ python3 scripts/import_tasks_to_server.py --append
 
 1. **move/tag API 模式**: 暂未完全实现，local 模式可用
 2. **批量操作**: 服务端暂未提供批量 update 接口
-3. **Apple 同步**: Phase 1 未改造，仍走本地 JSON 链路
+3. **Apple 同步**: 新主链路已验证可用（`sync_agent_mac.py` 基于 `/api/changes` 增量同步），但旧 Git/export 兼容链仍在仓库中，需逐步停用避免双链路并行
 4. **WebSocket**: Phase 1 不包含实时推送
 
 ### 下一步建议
