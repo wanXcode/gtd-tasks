@@ -245,13 +245,13 @@ agent-runtime/aigtd/
 - `MEMORY.md`
 - `README.md`
 
-### 2. 新增同步脚本
+### 2. 同步脚本（历史保留）
 
 ```bash
 python3 /root/.openclaw/workspace/gtd-tasks/scripts/sync_aigtd_runtime_files.py
 ```
 
-可用于把仓库内版本同步到 live agent 目录：
+该脚本最初用于把仓库内版本复制到 live agent 目录：
 
 - `/root/.openclaw/workspace/agents/aigtd/`
 
@@ -261,15 +261,17 @@ python3 /root/.openclaw/workspace/gtd-tasks/scripts/sync_aigtd_runtime_files.py
 python3 /root/.openclaw/workspace/gtd-tasks/scripts/sync_aigtd_runtime_files.py --dry-run
 ```
 
+**当前口径已更新：** live 目录中的核心三件套已改为直接链接到 `gtd-tasks/agent-runtime/aigtd/`，因此该脚本现在主要作为兼容旧结构 / 修复误覆盖时的兜底工具。
+
 ### 3. README 已补充说明
 
 `gtd-tasks/README.md` 已明确：
 
 - 后续若要修改 AIGTD 运行规则，优先改仓库内 `agent-runtime/aigtd/`
-- 再执行同步脚本
+- live 核心文件采用 link 到真源的方式，通常不再需要手工同步
 - 不再把 live 目录当唯一长期真相源
 
-这一步解决了此前“规则改了但没进入 GitHub”的长期隐患。
+这一步解决了此前“规则改了但没进入 GitHub”的长期隐患，也减少了“改了但忘同步”的风险。
 
 ---
 

@@ -223,13 +223,10 @@ AIGTD 的 live 运行规则文件位于：
 也就是说：
 
 - 后续若要修改 AIGTD 运行规则，优先修改仓库内 `agent-runtime/aigtd/` 下文件
-- 再执行同步脚本，把仓库版本同步到 live agent 目录：
+- 当前 live 目录中的 `PROMPT.md / OPERATING-GUIDE.md / MEMORY.md` 已采用 **link 到真源** 的方式，通常不需要再手工同步
+- `sync_aigtd_runtime_files.py` 现在主要作为旧结构兼容/修复工具保留，而不是日常主流程
 
-```bash
-python3 /root/.openclaw/workspace/gtd-tasks/scripts/sync_aigtd_runtime_files.py
-```
-
-仅查看会发生什么变化：
+必要时可检查当前状态：
 
 ```bash
 python3 /root/.openclaw/workspace/gtd-tasks/scripts/sync_aigtd_runtime_files.py --dry-run

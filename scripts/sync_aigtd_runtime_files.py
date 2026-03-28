@@ -16,6 +16,13 @@ def sync_file(src: Path, dst: Path, dry_run: bool = False) -> str:
     if not src.exists():
         return f'skip {src.name}: source missing'
     dst.parent.mkdir(parents=True, exist_ok=True)
+
+    if dst.is_symlink():
+        target = dst.resolve()
+        if target == src.resolve():
+            return f'linked {src.name} -> {src}'
+        return f'skip {src.name}: live file is symlink to {target}, please inspect manually'
+
     if dst.exists() and filecmp.cmp(src, dst, shallow=False):
         return f'unchanged {src.name}'
     if not dry_run:
@@ -30,6 +37,7 @@ def main() -> int:
 
     print(f'source: {SOURCE_DIR}')
     print(f'live:   {LIVE_DIR}')
+    print('note: current preferred mode is single-source + symlink; this script is now a fallback repair tool.')
     for name in FILES:
         print(sync_file(SOURCE_DIR / name, LIVE_DIR / name, dry_run=args.dry_run))
     return 0

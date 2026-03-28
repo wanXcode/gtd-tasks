@@ -99,5 +99,6 @@ AIGTD 为避免直接读写主文件，存在只读镜像层：
 ## 7. 当前已知限制
 
 - `agents/aigtd/` 目录当前不在 Git 仓库中
-- 本文档只是把当前 runtime 规则快照纳入 `gtd-tasks` 版本管理
-- 后续若要彻底收口，建议新增同步机制，把仓库内规则变更同步到 live agent 目录
+- 本文档只是把当时的 runtime 规则快照纳入 `gtd-tasks` 版本管理
+- 现已收口为单一真源：`gtd-tasks/agent-runtime/aigtd/`
+- live 目录中的核心三件套（`PROMPT.md / OPERATING-GUIDE.md / MEMORY.md`）已改为链接到真源，不再依赖日常手工同步

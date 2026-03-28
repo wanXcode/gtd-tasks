@@ -150,6 +150,34 @@ def execute_action(action: str, args: argparse.Namespace, *, env: dict[str, str]
     resolved_ref: dict[str, Any] | None = None
     resolved_id = intent_id
 
+    if action == 'list':
+        cmd += ['list']
+        if args.status:
+            cmd += ['--status', args.status]
+        if args.bucket:
+            cmd += ['--bucket', args.bucket]
+        if args.category:
+            cmd += ['--category', args.category]
+        if args.quadrant:
+            cmd += ['--quadrant', args.quadrant]
+        if args.tag:
+            for tag in args.tag:
+                cmd += ['--tag', tag]
+        if args.text:
+            cmd += ['--text', args.text]
+        if args.limit is not None:
+            cmd += ['--limit', str(args.limit)]
+        if args.verbose:
+            cmd += ['--verbose']
+        listed = run(cmd, env=env)
+        return {
+            'command': cmd,
+            'stdout': listed.stdout.strip(),
+            'stderr': listed.stderr.strip(),
+            'refresh': {},
+            'verify': {'count': len(parse_task_list_output(listed.stdout))},
+        }
+
     if action in {'update', 'done', 'reopen', 'delete'}:
         resolved_ref = resolve_task_reference(intent_id, env=env)
         resolved_id = resolved_ref['id']
@@ -222,6 +250,16 @@ def execute_action(action: str, args: argparse.Namespace, *, env: dict[str, str]
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description='AIGTD controlled GTD executor (API-only)')
     sub = p.add_subparsers(dest='cmd', required=True)
+
+    list_cmd = sub.add_parser('list', help='List tasks via API (read-only)')
+    list_cmd.add_argument('--status', choices=['open', 'done', 'cancelled', 'archived'])
+    list_cmd.add_argument('--bucket', choices=['today', 'tomorrow', 'future', 'archive'])
+    list_cmd.add_argument('--category', choices=['inbox', 'project', 'next_action', 'waiting_for', 'maybe'])
+    list_cmd.add_argument('--quadrant', choices=['q1', 'q2', 'q3', 'q4'])
+    list_cmd.add_argument('--tag', action='append', default=[])
+    list_cmd.add_argument('--text')
+    list_cmd.add_argument('--limit', type=int, default=100)
+    list_cmd.add_argument('--verbose', action='store_true')
 
     add = sub.add_parser('add', help='Add a task via API, then refresh cache/views')
     add.add_argument('title')
