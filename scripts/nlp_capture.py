@@ -168,8 +168,7 @@ def detect_category(text: str, bucket: str, tags):
         return 'maybe'
     if any(hint in text for hint in CATEGORY_HINTS['project']):
         return 'project'
-    if any(tag in tags for tag in ['ME']):
-        return 'next_action'
+    # ME 只代表“明确由我来处理”的标签，不应反向驱动所有任务都变成 next_action
     if any(hint in text for hint in CATEGORY_HINTS['next_action']):
         return 'next_action'
     return DEFAULT_CATEGORY

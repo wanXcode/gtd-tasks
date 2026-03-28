@@ -141,7 +141,8 @@ class LocalJsonTaskRepository(TaskRepository):
             return 'maybe'
         if any(keyword in text for keyword in project_keywords):
             return 'project'
-        if tags & {'ME'} or any(keyword in text for keyword in action_keywords):
+        # ME 只表示明确“由我处理”的标签；category 是否 next_action 仍按动作语义判断
+        if any(keyword in text for keyword in action_keywords):
             return 'next_action'
         return 'inbox'
 

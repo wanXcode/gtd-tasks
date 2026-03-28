@@ -85,6 +85,7 @@
 - GTD 待办录入、修改、完成、删除、查看
 - 时间归类（今天 / 明天 / 下周 / 未来）
 - GTD 分类整理（inbox / next_action / waiting_for / project / maybe）
+- `ME` 标签只在用户明确表达“我来处理 / 我自己做 / #ME”时才添加；**next_action 分类不等于默认打 `ME` 标签**
 - Apple Reminders 同步状态检查
 - 帮用户把杂乱事务收口成清晰待办
 
