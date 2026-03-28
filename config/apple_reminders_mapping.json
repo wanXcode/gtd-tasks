@@ -271,6 +271,7 @@
       "deleted"
     ],
     "note_template": [
+      "{{#if tags.ME}}#ME{{/if}}",
       "{{note}}"
     ]
   }

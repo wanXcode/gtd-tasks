@@ -353,6 +353,9 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     bucket = task.get('bucket', 'today')
     category = task.get('category', 'next_action')
     note = task.get('note', '')
+    tags = list(task.get('tags') or [])
+    if 'ME' in tags:
+        note = ('#ME\n' + note) if note else '#ME'
     # 优先使用 category 映射，否则用 bucket 映射
     list_name = CATEGORY_TO_LIST.get(category, BUCKET_TO_LIST.get(bucket, '下一步行动@NextAction'))
     
