@@ -367,14 +367,27 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     
     try:
         if action == 'create':
-            # 如果已有 mapping，说明已同步过，避免重复创建
+            # full-sync / 补同步场景下，如果已有 mapping，不应直接跳过，而应刷新已有 reminder 的标题/备注/列表
             if task_id and task_id in mappings:
                 existing_apple_id = mappings[task_id]
+                update_result = run_apple_script('update', reminder_id=existing_apple_id, title=title, note=note)
+                move_result = None
+                try:
+                    move_result = run_apple_script('move', reminder_id=existing_apple_id, list_name=list_name)
+                except Exception as move_exc:
+                    return {
+                        'status': 'error',
+                        'reason': f'full_sync_move_failed: {move_exc}',
+                        'task_id': task_id,
+                        'apple_reminder_id': existing_apple_id,
+                    }
                 return {
-                    'status': 'skipped',
-                    'reason': 'already_mapped',
+                    'status': 'updated',
+                    'reason': 'already_mapped_refreshed',
                     'task_id': task_id,
                     'apple_reminder_id': existing_apple_id,
+                    'update_stdout': update_result.get('stdout', ''),
+                    'move_stdout': (move_result or {}).get('stdout', ''),
                 }
             
             # 创建新 reminder

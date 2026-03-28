@@ -259,6 +259,7 @@ def render_matrix(data):
         lines += [f"- [ ] {task_line(t, '').strip()}" for t in open_tasks] or ['（暂无）']
         lines += ['', '## 已完成', '']
         lines += [f"- [x] {task_line(t, '').strip()}" for t in done] or ['（暂无）']
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
 
