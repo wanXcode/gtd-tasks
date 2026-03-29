@@ -26,7 +26,7 @@ def fail(action: str, code: str, message: str) -> int:
 
 def parse() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Minimal reminders bridge placeholder for EventKit migration')
-    parser.add_argument('action', choices=['check-permission', 'list-calendars', 'create', 'update', 'move', 'complete', 'delete'])
+    parser.add_argument('action', choices=['check-permission', 'list-calendars', 'get', 'create', 'update', 'move', 'complete', 'delete'])
     parser.add_argument('--input-json', dest='input_json', default='')
     return parser.parse_args()
 
@@ -48,6 +48,12 @@ def main() -> int:
 
     if action == 'list-calendars':
         return ok(action, calendars=[])
+
+    if action == 'get':
+        reminder_id = payload.get('reminder_id', '')
+        if not reminder_id:
+            return fail(action, 'MISSING_REMINDER_ID', 'reminder_id is required')
+        return ok(action, reminder_id=reminder_id, found=False, message='placeholder get only')
 
     if action == 'create':
         title = payload.get('title', '')

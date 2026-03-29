@@ -13,6 +13,7 @@
 支持动作：
 - `check-permission`
 - `list-calendars`
+- `get`
 - `create`
 - `update`
 - `move`
@@ -24,6 +25,7 @@
 ```bash
 ./mac/reminders-bridge check-permission
 ./mac/reminders-bridge list-calendars
+./mac/reminders-bridge get --input-json '{"reminder_id":"abc"}'
 ./mac/reminders-bridge create --input-json '{"title":"测试","list_name":"下一步行动@NextAction"}'
 ./mac/reminders-bridge update --input-json '{"reminder_id":"abc","title":"新标题","note":"备注"}'
 ./mac/reminders-bridge move --input-json '{"reminder_id":"abc","list_name":"项目@Project"}'

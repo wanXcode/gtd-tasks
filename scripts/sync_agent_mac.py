@@ -467,7 +467,33 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def check_reminder_completed(apple_reminder_id: str) -> bool:
-    """检查单个 reminder 是否已完成"""
+    """检查单个 reminder 是否已完成。
+
+    返回：
+    - True: 已完成
+    - False: 未完成
+    - None: 未找到或暂时无法判断（兼容迁移期不要直接删 mapping）
+    """
+    if not apple_reminder_id:
+        return None
+
+    # EventKit backend: 先尝试用新 bridge 查询；旧 x-apple-reminder:// id 迁移期先保守跳过
+    if REMINDERS_BACKEND == 'eventkit':
+        if str(apple_reminder_id).startswith('x-apple-reminder://'):
+            return None
+        try:
+            bridge = ReminderBridge(backend='eventkit')
+            result = bridge.run_eventkit('get', {'reminder_id': apple_reminder_id}, timeout=10)
+            if result.get('success') is True:
+                status = result.get('message', '')
+                if status == 'completed':
+                    return True
+                if status == 'active':
+                    return False
+            return None
+        except Exception:
+            return None
+
     try:
         script = f'''
 tell application "Reminders"
@@ -521,10 +547,9 @@ def push_apple_completed_to_server(base_url: str = DEFAULT_API_URL) -> Dict[str,
                 })
                 log(f'Reminder {apple_id} is completed')
             elif is_completed is None:
-                log(f'Reminder {apple_id} not found or error, removing from mapping')
-                del mappings[task_id]
-        
-        # 保存更新后的 mapping（移除已删除的）
+                log(f'Reminder {apple_id} not found or not yet compatible with current backend, keep mapping for migration')
+
+        # 保存 mapping（迁移期保守保留，不因单次查不到而删除）
         save_mappings(mappings)
         
         log(f'Found {len(completed_items)} completed reminders')

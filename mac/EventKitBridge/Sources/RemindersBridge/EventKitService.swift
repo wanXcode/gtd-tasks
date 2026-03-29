@@ -29,6 +29,17 @@ final class EventKitService {
         return BridgeSuccess(action: "list-calendars", reminder_id: nil, calendars: calendars, permission: nil, message: nil)
     }
 
+    func get(_ payload: ReminderPayload?) -> Result<BridgeSuccess, BridgeError> {
+        guard let reminderId = payload?.reminder_id, !reminderId.isEmpty else {
+            return .failure(BridgeError(action: "get", error_code: "MISSING_REMINDER_ID", error_message: "reminder_id is required"))
+        }
+        guard let reminder = store.calendarItem(withIdentifier: reminderId) as? EKReminder else {
+            return .failure(BridgeError(action: "get", error_code: "REMINDER_NOT_FOUND", error_message: "reminder not found"))
+        }
+        let completed = reminder.isCompleted ? "completed" : "active"
+        return .success(BridgeSuccess(action: "get", reminder_id: reminder.calendarItemIdentifier, calendars: nil, permission: nil, message: completed))
+    }
+
     func create(_ payload: ReminderPayload?) -> Result<BridgeSuccess, BridgeError> {
         guard let payload, let title = payload.title, !title.isEmpty else {
             return .failure(BridgeError(action: "create", error_code: "MISSING_TITLE", error_message: "title is required"))
