@@ -9,7 +9,7 @@ struct BridgeSuccess: Encodable {
     let message: String?
 }
 
-struct BridgeError: Encodable {
+struct BridgeError: Encodable, Error {
     let success: Bool = false
     let action: String
     let error_code: String

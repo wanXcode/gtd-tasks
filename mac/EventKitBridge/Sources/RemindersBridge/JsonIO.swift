@@ -12,7 +12,7 @@ enum JsonIO {
                 fputs("{\"success\":false,\"action\":\"unknown\",\"error_code\":\"ENCODING_FAILED\",\"error_message\":\"utf8 encoding failed\"}\n", stderr)
             }
         } catch {
-            fputs("{\"success\":false,\"action\":\"unknown\",\"error_code\":\"ENCODE_FAILED\",\"error_message\":\"")
+            fputs("{\"success\":false,\"action\":\"unknown\",\"error_code\":\"ENCODE_FAILED\",\"error_message\":\"", stderr)
             fputs(error.localizedDescription, stderr)
             fputs("\"}\n", stderr)
         }
