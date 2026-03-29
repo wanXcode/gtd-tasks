@@ -44,7 +44,6 @@ DEFAULT_API_URL = os.getenv('GTD_API_BASE_URL', 'https://gtd.5666.net')
 DEFAULT_CLIENT_ID = os.getenv('GTD_SYNC_CLIENT_ID', 'mac-primary')
 SYNC_STATE_PATH = ROOT / 'sync' / 'mac-sync-state.json'
 MAPPING_PATH = ROOT / 'sync' / 'mac-apple-mappings.json'
-APPLE_SCRIPT_PATH = ROOT / 'sync_apple_reminders_mac.applescript'
 LOG_PATH = ROOT / 'logs' / 'mac-sync-agent.log'
 REMINDERS_BACKEND = 'eventkit'
 PULL_CACHE_SCRIPT = ROOT / 'scripts' / 'pull_tasks_cache.py'
