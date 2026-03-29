@@ -340,6 +340,23 @@ def run_reminders_backend(action: str, **params) -> Dict[str, Any]:
     return run_apple_script(action, **params)
 
 
+def render_reminder_note(note: str, tags: List[Any]) -> str:
+    raw_tags = [str(tag).strip() for tag in (tags or []) if str(tag).strip()]
+    normalized = []
+    seen = set()
+    for tag in raw_tags:
+        pretty = '#' + tag.lstrip('#').upper()
+        if pretty not in seen:
+            seen.add(pretty)
+            normalized.append(pretty)
+    if not normalized:
+        return note or ''
+    tag_line = 'Tags: ' + ' '.join(normalized)
+    if note:
+        return f'{tag_line}\n\n{note}'
+    return tag_line
+
+
 def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     """将单个任务变更同步到 Apple Reminders"""
     task = change.get('task', {})
@@ -353,9 +370,7 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     category = task.get('category', 'next_action')
     note = task.get('note', '')
     tags = list(task.get('tags') or [])
-    normalized_tags = {str(tag).lstrip('#').upper() for tag in tags}
-    if 'ME' in normalized_tags:
-        note = ('#ME\n' + note) if note else '#ME'
+    note = render_reminder_note(note, tags)
     # 优先使用 category 映射，否则用 bucket 映射
     list_name = CATEGORY_TO_LIST.get(category, BUCKET_TO_LIST.get(bucket, '下一步行动@NextAction'))
     
