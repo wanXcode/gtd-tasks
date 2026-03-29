@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT / 'scripts'))
 os.environ.setdefault('GTD_TASK_BACKEND', 'api')
 os.environ.setdefault('GTD_API_BASE_URL', 'https://gtd.5666.net')
 
-from apple_reminders_sync_lib import maybe_auto_push, setup_logger  # noqa: E402
+import logging
 
 DATA = ROOT / 'data' / 'tasks.json'
 TASK_CLI = ROOT / 'scripts' / 'task_cli.py'
@@ -24,7 +24,9 @@ TZ = ZoneInfo('Asia/Shanghai')
 DEFAULT_BUCKET = 'future'
 DEFAULT_QUADRANT = 'q2'
 DEFAULT_CATEGORY = 'inbox'
-LOGGER = setup_logger('nlp_capture')
+LOGGER = logging.getLogger('nlp_capture')
+if not LOGGER.handlers:
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s | %(message)s')
 BUCKET_KEYWORDS = [
     ('today', ['今天', '今日', '今晚', '今晚上', '今天内', '今天处理', '今天做']),
     ('tomorrow', ['明天', '明日', '明早', '明晚', '明天下午', '明天上午']),
@@ -217,13 +219,9 @@ def apply_capture(preview, sync_apple_reminders=False):
         source='nlp',
     )
     
-    # 如果需要同步 Apple Reminders 且是 local backend
+    # 旧 auto-push Apple Reminders 链路已弃用；统一改走 sync_agent_mac.py EventKit-only 流程
     if sync_apple_reminders and backend == 'local':
-        from apple_reminders_sync_lib import maybe_auto_push
-        try:
-            maybe_auto_push(source='nlp_capture.apply_capture', changed_only=True, logger=LOGGER)
-        except Exception as exc:
-            LOGGER.warning('auto push failed: %s', exc)
+        LOGGER.info('sync_apple_reminders flag is deprecated; use scripts/sync_agent_mac.py EventKit-only flow instead')
     
     return f"added: {result.task['id']} {result.task['title']}"
 

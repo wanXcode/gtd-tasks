@@ -11,7 +11,6 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 
-from apple_reminders_sync_lib import maybe_auto_push, setup_logger  # noqa: E402
 from task_repository import get_repository, TaskRepository, TaskMutationResult  # noqa: E402
 
 DATA = ROOT / 'data' / 'tasks.json'
@@ -22,7 +21,11 @@ VALID_BUCKETS = ['today', 'tomorrow', 'future', 'archive']
 VALID_QUADRANTS = ['q1', 'q2', 'q3', 'q4']
 VALID_STATUSES = ['open', 'done', 'cancelled', 'archived']
 VALID_CATEGORIES = ['inbox', 'project', 'next_action', 'waiting_for', 'maybe']
-LOGGER = setup_logger('task_cli')
+import logging
+
+LOGGER = logging.getLogger('task_cli')
+if not LOGGER.handlers:
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s | %(message)s')
 
 
 def now_dt():
@@ -56,14 +59,7 @@ def refresh_after_write(backend: str):
 def auto_push_after_write(task_ids, source, sync=False, backend='local'):
     if not sync:
         return
-    if backend != 'local':
-        LOGGER.info('auto push skipped: backend is %s', backend)
-        return
-    try:
-        result = maybe_auto_push(source=source, changed_only=True, logger=LOGGER)
-        LOGGER.info('auto push result: %s', result)
-    except Exception as exc:
-        LOGGER.warning('auto push failed: %s', exc)
+    LOGGER.info('sync_apple_reminders flag is deprecated; use scripts/sync_agent_mac.py EventKit-only flow instead')
 
 
 def apply_filters(tasks, args):
