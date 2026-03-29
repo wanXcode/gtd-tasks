@@ -24,23 +24,23 @@
 
 ## Legacy 说明
 
-以下内容仍保留在仓库中，但**不再属于当前主执行链路**：
+以下内容已从主路径移出，并归档到 `archive/legacy/`，**不再属于当前主执行链路**：
 
-- `sync_apple_reminders_mac.applescript`
-- `scripts/apple_reminders_sync_lib.py`
-- `mac/cleanup_gtd_id_markers.applescript`
+- `archive/legacy/sync_apple_reminders_mac.applescript`
+- `archive/legacy/scripts/apple_reminders_sync_lib.py`
+- `archive/legacy/mac/cleanup_gtd_id_markers.applescript`
 - 以及 `docs/history/` 下的历史 AppleScript 方案文档
 
-保留原因：
+归档原因：
 
-- 旧自动 push / 历史回溯仍可能参考
-- 历史文档需要保留上下文
-- 避免在同一轮 cutover 中误删仍被其他脚本引用的 legacy 文件
+- 保留历史回溯与实现上下文
+- 避免主路径继续暴露 legacy AppleScript 文件
+- 当前主链路已经不再依赖这些文件
 
 ## 后续建议
 
-后续若确认没有任何调用方再依赖 `scripts/apple_reminders_sync_lib.py`：
+后续若确认 archive 中这些 legacy 文件不再需要保留：
 
-1. 将 legacy AppleScript 文件移动到 `archive/legacy/`
-2. 清理 `nlp_capture.py` / `task_cli.py` 对旧自动 push 的依赖
+1. 直接删除 `archive/legacy/` 下对应 AppleScript/旧同步文件
+2. 继续清理历史文档中的旧路径说明（如有需要）
 3. 再做一次最终物理删除
