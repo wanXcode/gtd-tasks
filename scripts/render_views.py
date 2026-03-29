@@ -55,12 +55,19 @@ def fmt_cn_date_obj(d):
 def task_line(task, bullet='•'):
     title = task['title']
     note = task.get('note') or ''
-    prefix = '#ME ' if 'ME' in task.get('tags', []) else ''
-    suffix = ' 👤' if 'ME' in task.get('tags', []) else ''
-    text = f"{prefix}{title}"
+    raw_tags = [str(tag).strip() for tag in (task.get('tags') or []) if str(tag).strip()]
+    tags = []
+    seen = set()
+    for tag in raw_tags:
+        pretty = '#' + tag.lstrip('#').upper()
+        if pretty not in seen:
+            seen.add(pretty)
+            tags.append(pretty)
+    text = title
+    if tags:
+        text += ' ' + ' '.join(tags)
     if note:
         text += f" — {note}"
-    text += suffix
     return f"{bullet} {text}"
 
 
