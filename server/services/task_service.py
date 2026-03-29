@@ -171,7 +171,7 @@ class TaskService:
             if not mapping or not mapping.task_id:
                 continue
             task = self.repo.get_task(mapping.task_id)
-            if not task:
+            if (not task) or getattr(task, 'deleted_at', None):
                 self.repo.delete_apple_mapping(mapping.task_id)
                 removed.append({
                     'task_id': mapping.task_id,
