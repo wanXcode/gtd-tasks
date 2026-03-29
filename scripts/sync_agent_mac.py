@@ -33,6 +33,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from zoneinfo import ZoneInfo
 
+from apple_reminders_bridge import ReminderBridge, ReminderBridgeError
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 
@@ -44,6 +46,7 @@ SYNC_STATE_PATH = ROOT / 'sync' / 'mac-sync-state.json'
 MAPPING_PATH = ROOT / 'sync' / 'mac-apple-mappings.json'
 APPLE_SCRIPT_PATH = ROOT / 'sync_apple_reminders_mac.applescript'
 LOG_PATH = ROOT / 'logs' / 'mac-sync-agent.log'
+REMINDERS_BACKEND = (os.getenv('GTD_REMINDERS_BACKEND', 'eventkit') or 'eventkit').strip().lower()
 PULL_CACHE_SCRIPT = ROOT / 'scripts' / 'pull_tasks_cache.py'
 RENDER_VIEWS_SCRIPT = ROOT / 'scripts' / 'render_views.py'
 
@@ -234,16 +237,11 @@ def refresh_local_cache_from_api(base_url: str = DEFAULT_API_URL) -> Dict[str, s
 
 
 def run_apple_script(action: str, **params) -> Dict[str, Any]:
-    """运行 AppleScript 操作 Apple Reminders"""
+    """运行 AppleScript 操作 Apple Reminders（fallback backend）"""
     if not apple_script_exists():
         raise RuntimeError(f'AppleScript not found: {APPLE_SCRIPT_PATH}')
-    
-    # 构建 AppleScript 调用
-    # 简化版：直接调用 osascript
-    script_lines = []
-    
+
     if action == 'create':
-        # 创建 reminder
         title = params.get('title', '')
         list_name = params.get('list_name', 'GTD Today')
         note = params.get('note', '')
@@ -257,7 +255,6 @@ tell application "Reminders"
 end tell
 '''
     elif action == 'complete':
-        # 完成 reminder
         reminder_id = params.get('reminder_id', '')
         script = f'''
 tell application "Reminders"
@@ -267,7 +264,6 @@ tell application "Reminders"
 end tell
 '''
     elif action == 'update':
-        # 更新 reminder
         reminder_id = params.get('reminder_id', '')
         title = params.get('title', '')
         note = params.get('note', '')
@@ -280,7 +276,6 @@ tell application "Reminders"
 end tell
 '''
     elif action == 'move':
-        # 移动 reminder 到另一个 list
         reminder_id = params.get('reminder_id', '')
         new_list = params.get('list_name', 'GTD Today')
         script = f'''
@@ -304,32 +299,9 @@ tell application "Reminders"
     end try
 end tell
 '''
-    elif action == 'get_completed':
-        # 获取已完成的 reminders（用于回写）
-        # 只查询 GTD 相关的列表，避免遍历全部 reminders 导致超时
-        script = '''
-tell application "Reminders"
-    set completedReminders to {}
-    set gtdLists to {"收集箱@Inbox", "下一步行动@NextAction", "项目@Project", "等待@Waiting For", "可能的事@Maybe"}
-    repeat with listName in gtdLists
-        try
-            set targetList to list listName
-            repeat with r in reminders of targetList
-                if completed of r is true and modification date of r > (current date) - 24 * hours then
-                    set end of completedReminders to {id:(id of r), name:(name of r), completed_date:(completion date of r)}
-                end if
-            end repeat
-        on error
-            -- 列表不存在则跳过
-        end try
-    end repeat
-    return completedReminders
-end tell
-'''
     else:
         raise ValueError(f'Unknown action: {action}')
-    
-    # 执行 AppleScript
+
     result = subprocess.run(
         ['osascript', '-e', script],
         capture_output=True,
@@ -339,6 +311,33 @@ end tell
     if result.returncode != 0:
         raise RuntimeError(f'AppleScript failed: {result.stderr}')
     return {'stdout': result.stdout.strip(), 'stderr': result.stderr}
+
+
+def run_reminders_backend(action: str, **params) -> Dict[str, Any]:
+    """统一的 Reminders 执行入口：优先 EventKit bridge，必要时回退 AppleScript。"""
+    if REMINDERS_BACKEND == 'eventkit':
+        bridge = ReminderBridge(backend='eventkit')
+        action_map = {
+            'create': 'create',
+            'update': 'update',
+            'move': 'move',
+            'complete': 'complete',
+            'delete': 'delete',
+        }
+        bridge_action = action_map.get(action)
+        if not bridge_action:
+            raise ValueError(f'Unsupported backend action: {action}')
+        try:
+            result = bridge.run_eventkit(bridge_action, params)
+            if isinstance(result, dict):
+                if 'stdout' not in result and result.get('reminder_id'):
+                    result['stdout'] = str(result.get('reminder_id'))
+                return result
+            return {'stdout': str(result), 'stderr': ''}
+        except ReminderBridgeError as exc:
+            raise RuntimeError(str(exc)) from exc
+
+    return run_apple_script(action, **params)
 
 
 def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
@@ -371,10 +370,10 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
             # full-sync / 补同步场景下，如果已有 mapping，不应直接跳过，而应刷新已有 reminder 的标题/备注/列表
             if task_id and task_id in mappings:
                 existing_apple_id = mappings[task_id]
-                update_result = run_apple_script('update', reminder_id=existing_apple_id, title=title, note=note)
+                update_result = run_reminders_backend('update', reminder_id=existing_apple_id, title=title, note=note)
                 move_result = None
                 try:
-                    move_result = run_apple_script('move', reminder_id=existing_apple_id, list_name=list_name)
+                    move_result = run_reminders_backend('move', reminder_id=existing_apple_id, list_name=list_name)
                 except Exception as move_exc:
                     return {
                         'status': 'error',
@@ -392,8 +391,8 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
                 }
             
             # 创建新 reminder
-            result = run_apple_script('create', title=title, list_name=list_name, note=note)
-            apple_id = result.get('stdout', '').strip()
+            result = run_reminders_backend('create', title=title, list_name=list_name, note=note)
+            apple_id = str(result.get('reminder_id') or result.get('stdout', '')).strip()
             # 保存到本地 mapping
             if apple_id and task_id:
                 mappings[task_id] = apple_id
@@ -413,10 +412,10 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
                 return {'status': 'skipped', 'reason': 'update_missing_mapping', 'task_id': task_id}
 
             apple_id = mappings[task_id]
-            update_result = run_apple_script('update', reminder_id=apple_id, title=title, note=note)
+            update_result = run_reminders_backend('update', reminder_id=apple_id, title=title, note=note)
             move_result = None
             try:
-                move_result = run_apple_script('move', reminder_id=apple_id, list_name=list_name)
+                move_result = run_reminders_backend('move', reminder_id=apple_id, list_name=list_name)
             except Exception as move_exc:
                 return {
                     'status': 'error',
@@ -437,7 +436,7 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
                 return {'status': 'skipped', 'reason': 'done_missing_mapping', 'task_id': task_id}
 
             apple_id = mappings[task_id]
-            result = run_apple_script('complete', reminder_id=apple_id)
+            result = run_reminders_backend('complete', reminder_id=apple_id)
             return {
                 'status': 'done',
                 'task_id': task_id,
@@ -450,7 +449,7 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
                 return {'status': 'skipped', 'reason': 'delete_missing_mapping', 'task_id': task_id}
 
             apple_id = mappings[task_id]
-            result = run_apple_script('delete', reminder_id=apple_id)
+            result = run_reminders_backend('delete', reminder_id=apple_id)
             mappings.pop(task_id, None)
             save_mappings(mappings)
             return {
