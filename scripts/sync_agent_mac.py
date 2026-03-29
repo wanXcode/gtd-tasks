@@ -46,7 +46,7 @@ SYNC_STATE_PATH = ROOT / 'sync' / 'mac-sync-state.json'
 MAPPING_PATH = ROOT / 'sync' / 'mac-apple-mappings.json'
 APPLE_SCRIPT_PATH = ROOT / 'sync_apple_reminders_mac.applescript'
 LOG_PATH = ROOT / 'logs' / 'mac-sync-agent.log'
-REMINDERS_BACKEND = (os.getenv('GTD_REMINDERS_BACKEND', 'eventkit') or 'eventkit').strip().lower()
+REMINDERS_BACKEND = 'eventkit'
 PULL_CACHE_SCRIPT = ROOT / 'scripts' / 'pull_tasks_cache.py'
 RENDER_VIEWS_SCRIPT = ROOT / 'scripts' / 'render_views.py'
 
@@ -202,8 +202,8 @@ def ack_changes(client_id: str, last_change_id: int, base_url: str = DEFAULT_API
 
 
 def apple_script_exists() -> bool:
-    """检查 AppleScript 是否存在"""
-    return APPLE_SCRIPT_PATH.exists()
+    """兼容保留：EventKit-only 路线下恒为 True。"""
+    return True
 
 
 def refresh_local_cache_from_api(base_url: str = DEFAULT_API_URL) -> Dict[str, str]:
@@ -236,108 +236,28 @@ def refresh_local_cache_from_api(base_url: str = DEFAULT_API_URL) -> Dict[str, s
     }
 
 
-def run_apple_script(action: str, **params) -> Dict[str, Any]:
-    """运行 AppleScript 操作 Apple Reminders（fallback backend）"""
-    if not apple_script_exists():
-        raise RuntimeError(f'AppleScript not found: {APPLE_SCRIPT_PATH}')
-
-    if action == 'create':
-        title = params.get('title', '')
-        list_name = params.get('list_name', 'GTD Today')
-        note = params.get('note', '')
-        script = f'''
-tell application "Reminders"
-    set targetList to list "{list_name}"
-    tell targetList
-        set newReminder to make new reminder with properties {{name:"{title}", body:"{note}"}}
-        return id of newReminder
-    end tell
-end tell
-'''
-    elif action == 'complete':
-        reminder_id = params.get('reminder_id', '')
-        script = f'''
-tell application "Reminders"
-    set r to first reminder whose id is "{reminder_id}"
-    set completed of r to true
-    return "ok"
-end tell
-'''
-    elif action == 'update':
-        reminder_id = params.get('reminder_id', '')
-        title = params.get('title', '')
-        note = params.get('note', '')
-        script = f'''
-tell application "Reminders"
-    set r to first reminder whose id is "{reminder_id}"
-    set name of r to "{title}"
-    set body of r to "{note}"
-    return "ok"
-end tell
-'''
-    elif action == 'move':
-        reminder_id = params.get('reminder_id', '')
-        new_list = params.get('list_name', 'GTD Today')
-        script = f'''
-tell application "Reminders"
-    set r to first reminder whose id is "{reminder_id}"
-    set targetList to list "{new_list}"
-    move r to targetList
-    return "ok"
-end tell
-'''
-    elif action == 'delete':
-        reminder_id = params.get('reminder_id', '')
-        script = f'''
-tell application "Reminders"
-    try
-        set r to first reminder whose id is "{reminder_id}"
-        delete r
-        return "ok"
-    on error
-        return "not_found"
-    end try
-end tell
-'''
-    else:
-        raise ValueError(f'Unknown action: {action}')
-
-    result = subprocess.run(
-        ['osascript', '-e', script],
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f'AppleScript failed: {result.stderr}')
-    return {'stdout': result.stdout.strip(), 'stderr': result.stderr}
-
-
 def run_reminders_backend(action: str, **params) -> Dict[str, Any]:
-    """统一的 Reminders 执行入口：优先 EventKit bridge，必要时回退 AppleScript。"""
-    if REMINDERS_BACKEND == 'eventkit':
-        bridge = ReminderBridge(backend='eventkit')
-        action_map = {
-            'create': 'create',
-            'update': 'update',
-            'move': 'move',
-            'complete': 'complete',
-            'delete': 'delete',
-        }
-        bridge_action = action_map.get(action)
-        if not bridge_action:
-            raise ValueError(f'Unsupported backend action: {action}')
-        try:
-            result = bridge.run_eventkit(bridge_action, params)
-            if isinstance(result, dict):
-                if 'stdout' not in result and result.get('reminder_id'):
-                    result['stdout'] = str(result.get('reminder_id'))
-                return result
-            return {'stdout': str(result), 'stderr': ''}
-        except ReminderBridgeError as exc:
-            raise RuntimeError(str(exc)) from exc
-
-    return run_apple_script(action, **params)
+    """统一的 Reminders 执行入口：仅使用 EventKit bridge。"""
+    bridge = ReminderBridge(backend='eventkit')
+    action_map = {
+        'create': 'create',
+        'update': 'update',
+        'move': 'move',
+        'complete': 'complete',
+        'delete': 'delete',
+    }
+    bridge_action = action_map.get(action)
+    if not bridge_action:
+        raise ValueError(f'Unsupported backend action: {action}')
+    try:
+        result = bridge.run_eventkit(bridge_action, params)
+        if isinstance(result, dict):
+            if 'stdout' not in result and result.get('reminder_id'):
+                result['stdout'] = str(result.get('reminder_id'))
+            return result
+        return {'stdout': str(result), 'stderr': ''}
+    except ReminderBridgeError as exc:
+        raise RuntimeError(str(exc)) from exc
 
 
 def render_reminder_note(note: str, tags: List[Any]) -> str:
@@ -492,45 +412,16 @@ def check_reminder_completed(apple_reminder_id: str) -> bool:
     if not apple_reminder_id:
         return None
 
-    # EventKit backend: 先尝试用新 bridge 查询；旧 x-apple-reminder:// id 迁移期先保守跳过
-    if REMINDERS_BACKEND == 'eventkit':
-        if str(apple_reminder_id).startswith('x-apple-reminder://'):
-            return None
-        try:
-            bridge = ReminderBridge(backend='eventkit')
-            result = bridge.run_eventkit('get', {'reminder_id': apple_reminder_id}, timeout=10)
-            if result.get('success') is True:
-                status = result.get('message', '')
-                if status == 'completed':
-                    return True
-                if status == 'active':
-                    return False
-            return None
-        except Exception:
-            return None
-
+    if str(apple_reminder_id).startswith('x-apple-reminder://'):
+        return None
     try:
-        script = f'''
-tell application "Reminders"
-    try
-        set r to first reminder whose id is "{apple_reminder_id}"
-        return completed of r
-    on error
-        return "not_found"
-    end try
-end tell
-'''
-        result = subprocess.run(
-            ['osascript', '-e', script],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        if result.returncode == 0:
-            stdout = result.stdout.strip()
-            if stdout == 'true':
+        bridge = ReminderBridge(backend='eventkit')
+        result = bridge.run_eventkit('get', {'reminder_id': apple_reminder_id}, timeout=10)
+        if result.get('success') is True:
+            status = result.get('message', '')
+            if status == 'completed':
                 return True
-            elif stdout == 'false':
+            if status == 'active':
                 return False
         return None
     except Exception:
@@ -638,13 +529,11 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: 
     
     # 3. 同步到 Apple（如果不是 dry_run）
     sync_results = []
-    if not dry_run and apple_script_exists():
+    if not dry_run:
         for change in items:
             result = sync_task_to_apple(change)
             sync_results.append(result)
             log(f"Sync task {change.get('task', {}).get('id')}: {result['status']}")
-    elif not apple_script_exists():
-        log('AppleScript not found, skipping Apple sync')
     else:
         log('Dry run mode, skipping Apple sync')
     

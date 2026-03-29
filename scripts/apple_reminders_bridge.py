@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_BRIDGE_PATH = ROOT / 'mac' / 'reminders-bridge'
-DEFAULT_BACKEND = os.getenv('GTD_REMINDERS_BACKEND', 'eventkit').strip().lower() or 'eventkit'
+DEFAULT_BACKEND = 'eventkit'
 
 
 class ReminderBridgeError(RuntimeError):
