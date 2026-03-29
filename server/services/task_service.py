@@ -143,15 +143,22 @@ class TaskService:
 
     def list_apple_mappings(self) -> Dict[str, Any]:
         mappings = self.repo.list_apple_mappings()
-        return {
-            'items': [
-                {
-                    'task_id': m.task_id,
-                    'apple_reminder_id': m.apple_reminder_id,
-                }
-                for m in mappings if m and m.task_id and m.apple_reminder_id
-            ]
-        }
+        items = []
+        for m in mappings:
+            if not m or not m.task_id or not m.apple_reminder_id:
+                continue
+            task = self.repo.get_task(m.task_id)
+            if not task:
+                continue
+            if getattr(task, 'deleted_at', None):
+                continue
+            if getattr(task, 'status', None) == 'done' or getattr(task, 'bucket', None) == 'archive':
+                continue
+            items.append({
+                'task_id': m.task_id,
+                'apple_reminder_id': m.apple_reminder_id,
+            })
+        return {'items': items}
 
     def save_apple_mapping(self, task_id: str, apple_reminder_id: str) -> Dict[str, Any]:
         """保存 Apple Reminder ID 到 Task ID 的映射"""
