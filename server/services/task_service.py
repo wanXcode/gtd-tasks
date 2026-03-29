@@ -162,3 +162,26 @@ class TaskService:
         # 保存映射
         self.repo.save_apple_mapping(task_id, apple_reminder_id)
         return {'task_id': task_id, 'apple_reminder_id': apple_reminder_id, 'status': 'saved'}
+
+    def cleanup_orphan_apple_mappings(self) -> Dict[str, Any]:
+        mappings = self.repo.list_apple_mappings()
+        removed = []
+        kept = 0
+        for mapping in mappings:
+            if not mapping or not mapping.task_id:
+                continue
+            task = self.repo.get_task(mapping.task_id)
+            if not task:
+                self.repo.delete_apple_mapping(mapping.task_id)
+                removed.append({
+                    'task_id': mapping.task_id,
+                    'apple_reminder_id': mapping.apple_reminder_id,
+                })
+            else:
+                kept += 1
+        return {
+            'status': 'ok',
+            'removed_count': len(removed),
+            'kept_count': kept,
+            'removed': removed,
+        }

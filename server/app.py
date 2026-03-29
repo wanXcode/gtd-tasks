@@ -142,6 +142,8 @@ class AppHandler(BaseHTTPRequestHandler):
         if parsed.path == '/api/apple/mappings':
             # 保存 Apple Reminder ID 到 Task ID 的映射
             body = self._read_json()
+            if body.get('action') == 'cleanup_orphans':
+                return json_response(self, self.task_service.cleanup_orphan_apple_mappings())
             mappings = body.get('mappings', [])
             results = []
             for mapping in mappings:

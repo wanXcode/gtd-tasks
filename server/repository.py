@@ -219,3 +219,8 @@ class TaskRepository:
                 (task_id, apple_reminder_id)
             )
             conn.commit()
+
+    def delete_apple_mapping(self, task_id: str) -> None:
+        with get_conn(self.db_path) as conn:
+            conn.execute('DELETE FROM apple_mappings WHERE task_id = ?', (task_id,))
+            conn.commit()
