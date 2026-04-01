@@ -259,7 +259,7 @@ def run_reminders_backend(action: str, **params) -> Dict[str, Any]:
         raise RuntimeError(str(exc)) from exc
 
 
-def render_reminder_note(note: str, tags: List[Any]) -> str:
+def normalize_tags(tags: List[Any]) -> List[str]:
     raw_tags = [str(tag).strip() for tag in (tags or []) if str(tag).strip()]
     normalized = []
     seen = set()
@@ -268,12 +268,18 @@ def render_reminder_note(note: str, tags: List[Any]) -> str:
         if pretty not in seen:
             seen.add(pretty)
             normalized.append(pretty)
+    return normalized
+
+
+def render_reminder_title(title: str, tags: List[Any]) -> str:
+    normalized = normalize_tags(tags)
     if not normalized:
-        return note or ''
-    tag_line = 'Tags: ' + ' '.join(normalized)
-    if note:
-        return f'{tag_line}\n\n{note}'
-    return tag_line
+        return title
+    return f"{title} {' '.join(normalized)}"
+
+
+def render_reminder_note(note: str, tags: List[Any]) -> str:
+    return note or ''
 
 
 def bucket_to_due_date(bucket: str) -> Optional[str]:
@@ -293,11 +299,12 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     
     action = change.get('action')
     task_id = task.get('id')
-    title = task.get('title', '')
+    raw_title = task.get('title', '')
     bucket = task.get('bucket', 'today')
     category = task.get('category', 'next_action')
     note = task.get('note', '')
     tags = list(task.get('tags') or [])
+    title = render_reminder_title(raw_title, tags)
     note = render_reminder_note(note, tags)
     due_date = bucket_to_due_date(bucket)
     # 优先使用 category 映射，否则用 bucket 映射
