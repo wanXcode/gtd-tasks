@@ -72,14 +72,22 @@ def now_iso() -> str:
     return datetime.now(TZ).isoformat(timespec='seconds')
 
 
-def log(msg: str) -> None:
+def log(msg: str, level: str = 'INFO') -> None:
     timestamp = now_iso()
-    line = f"[{timestamp}] {msg}"
+    line = f"[{timestamp}] [{level}] {msg}"
     print(line)
-    # 追加到日志文件
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(LOG_PATH, 'a', encoding='utf-8') as f:
         f.write(line + '\n')
+
+
+def log_warn(msg: str) -> None:
+    log(msg, level='WARN')
+
+
+
+def log_error(msg: str) -> None:
+    log(msg, level='ERROR')
 
 
 def default_sync_state() -> Dict[str, Any]:
@@ -482,7 +490,7 @@ def check_reminder_completed(apple_reminder_id: str) -> bool:
             if attempt == 0:
                 time.sleep(0.5)
                 continue
-            log(f'Reminder {apple_reminder_id} get failed after retry: {exc!r}')
+            log_warn(f'Reminder {apple_reminder_id} get failed after retry: {exc!r}')
             return None
 
     if last_error is not None:
@@ -528,7 +536,7 @@ def reconcile_open_mapped_reminders(base_url: str = DEFAULT_API_URL) -> Dict[str
             refreshed += 1
         except Exception as exc:
             errors.append({'task_id': task_id, 'reminder_id': reminder_id, 'error': str(exc)})
-            log(f'Failed to reconcile mapped reminder {task_id} -> {reminder_id}: {exc}')
+            log_warn(f'Failed to reconcile mapped reminder {task_id} -> {reminder_id}: {exc}')
 
     result = {
         'status': 'ok' if not errors else 'partial',
@@ -567,7 +575,7 @@ def push_apple_completed_to_server(base_url: str = DEFAULT_API_URL) -> Dict[str,
                 })
                 log(f'Reminder {apple_id} is completed')
             elif is_completed is None:
-                log(f'Reminder {apple_id} not found or not yet compatible with current backend, keep mapping for migration')
+                log_warn(f'Reminder {apple_id} not found or not yet compatible with current backend, keep mapping for migration')
 
         # 保存 mapping（迁移期保守保留，不因单次查不到而删除）
         save_mappings(mappings)
@@ -660,7 +668,7 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: 
                 if isinstance(change_id, int) and change_id > ack_upto_change_id:
                     ack_upto_change_id = change_id
             else:
-                log(
+                log_warn(
                     f"Stop ack advancement at change_id={change.get('change_id')} due to status={result.get('status')}"
                 )
                 break
@@ -675,7 +683,12 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: 
     # 5. 回写 Apple completed 到服务端（优化版：只查询本地 mapping）
     if not dry_run:
         push_result = push_apple_completed_to_server(base_url=base_url)
-        log(f'Push completed result: {push_result}')
+        if push_result.get('status') == 'error':
+            log_error(f'Push completed result: {push_result}')
+        elif push_result.get('processed', 0) > 0:
+            log(f'Push completed result: {push_result}')
+        else:
+            log_warn(f'Push completed result: {push_result}')
     
     # 6. Ack 已消费的变更
     if not dry_run and ack_upto_change_id > last_change_id:
