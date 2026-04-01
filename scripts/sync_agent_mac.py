@@ -276,6 +276,15 @@ def render_reminder_note(note: str, tags: List[Any]) -> str:
     return tag_line
 
 
+def bucket_to_due_date(bucket: str) -> Optional[str]:
+    today = datetime.now(TZ).date()
+    if bucket == 'today':
+        return today.isoformat()
+    if bucket == 'tomorrow':
+        return (today.fromordinal(today.toordinal() + 1)).isoformat()
+    return None
+
+
 def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     """将单个任务变更同步到 Apple Reminders"""
     task = change.get('task', {})
@@ -290,6 +299,7 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     note = task.get('note', '')
     tags = list(task.get('tags') or [])
     note = render_reminder_note(note, tags)
+    due_date = bucket_to_due_date(bucket)
     # 优先使用 category 映射，否则用 bucket 映射
     list_name = CATEGORY_TO_LIST.get(category, BUCKET_TO_LIST.get(bucket, '下一步行动@NextAction'))
     
@@ -304,7 +314,7 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
             # full-sync / 补同步场景下，如果已有 mapping，不应直接跳过，而应刷新已有 reminder 的标题/备注/列表
             if task_id and task_id in mappings:
                 existing_apple_id = mappings[task_id]
-                update_result = run_reminders_backend('update', reminder_id=existing_apple_id, title=title, note=note)
+                update_result = run_reminders_backend('update', reminder_id=existing_apple_id, title=title, note=note, due_date=due_date)
                 move_result = None
                 try:
                     move_result = run_reminders_backend('move', reminder_id=existing_apple_id, list_name=list_name)
@@ -325,7 +335,7 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
                 }
             
             # 创建新 reminder
-            result = run_reminders_backend('create', title=title, list_name=list_name, note=note)
+            result = run_reminders_backend('create', title=title, list_name=list_name, note=note, due_date=due_date)
             apple_id = str(result.get('reminder_id') or result.get('stdout', '')).strip()
             # 保存到本地 mapping
             if apple_id and task_id:
@@ -346,7 +356,7 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
                 return {'status': 'skipped', 'reason': 'update_missing_mapping', 'task_id': task_id}
 
             apple_id = mappings[task_id]
-            update_result = run_reminders_backend('update', reminder_id=apple_id, title=title, note=note)
+            update_result = run_reminders_backend('update', reminder_id=apple_id, title=title, note=note, due_date=due_date)
             move_result = None
             try:
                 move_result = run_reminders_backend('move', reminder_id=apple_id, list_name=list_name)

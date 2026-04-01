@@ -4,6 +4,24 @@ import EventKit
 final class EventKitService {
     private let store = EKEventStore()
 
+    private func parseDueDateComponents(_ raw: String?) -> DateComponents? {
+        guard let raw, !raw.isEmpty else { return nil }
+        let parts = raw.split(separator: "-").map(String.init)
+        guard parts.count == 3,
+              let year = Int(parts[0]),
+              let month = Int(parts[1]),
+              let day = Int(parts[2]) else {
+            return nil
+        }
+        var comps = DateComponents()
+        comps.calendar = Calendar(identifier: .gregorian)
+        comps.timeZone = TimeZone.current
+        comps.year = year
+        comps.month = month
+        comps.day = day
+        return comps
+    }
+
     func checkPermission() -> BridgeSuccess {
         let status = EKEventStore.authorizationStatus(for: .reminder)
         let permission: String
@@ -48,6 +66,7 @@ final class EventKitService {
             let reminder = EKReminder(eventStore: store)
             reminder.title = title
             reminder.notes = payload.note
+            reminder.dueDateComponents = parseDueDateComponents(payload.due_date)
             if let listName = payload.list_name, let calendar = findCalendar(named: listName) {
                 reminder.calendar = calendar
             } else if reminder.calendar == nil, let `default` = store.defaultCalendarForNewReminders() {
@@ -72,6 +91,7 @@ final class EventKitService {
                 reminder.title = title
             }
             reminder.notes = payload?.note
+            reminder.dueDateComponents = parseDueDateComponents(payload?.due_date)
             try store.save(reminder, commit: true)
             return .success(BridgeSuccess(action: "update", reminder_id: reminder.calendarItemIdentifier, calendars: nil, permission: nil, message: nil))
         } catch {

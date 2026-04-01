@@ -27,4 +27,5 @@ struct ReminderPayload: Decodable {
     let list_name: String?
     let note: String?
     let completed: Bool?
+    let due_date: String?
 }
