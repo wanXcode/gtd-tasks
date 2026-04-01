@@ -528,11 +528,27 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: 
     
     # 3. 同步到 Apple（如果不是 dry_run）
     sync_results = []
+    ack_upto_change_id = last_change_id
     if not dry_run:
         for change in items:
             result = sync_task_to_apple(change)
-            sync_results.append(result)
+            sync_results.append({
+                'change_id': change.get('change_id'),
+                'task_id': change.get('task', {}).get('id'),
+                **result,
+            })
             log(f"Sync task {change.get('task', {}).get('id')}: {result['status']}")
+
+            # 只有连续成功的变更才允许推进 ack 游标；一旦遇到失败/跳过，立即停止，避免吞 change
+            if result.get('status') in {'created', 'updated', 'done', 'deleted'}:
+                change_id = change.get('change_id')
+                if isinstance(change_id, int) and change_id > ack_upto_change_id:
+                    ack_upto_change_id = change_id
+            else:
+                log(
+                    f"Stop ack advancement at change_id={change.get('change_id')} due to status={result.get('status')}"
+                )
+                break
     else:
         log('Dry run mode, skipping Apple sync')
     
@@ -542,17 +558,19 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: 
         log(f'Push completed result: {push_result}')
     
     # 5. Ack 已消费的变更
-    if not dry_run and next_change_id > last_change_id:
+    if not dry_run and ack_upto_change_id > last_change_id:
         try:
-            ack_result = ack_changes(client_id, next_change_id, base_url=base_url)
+            ack_result = ack_changes(client_id, ack_upto_change_id, base_url=base_url)
             log(f'Acked changes: {ack_result}')
             # 更新本地状态
-            state['last_change_id'] = next_change_id
+            state['last_change_id'] = ack_upto_change_id
             state['last_sync_at'] = now_iso()
             save_sync_state(state)
         except Exception as exc:
             log(f'Failed to ack changes: {exc}')
             return {'status': 'error', 'phase': 'ack', 'error': str(exc)}
+    elif not dry_run and items and ack_upto_change_id == last_change_id:
+        log('No successful contiguous changes to ack; keeping cursor unchanged')
     elif not dry_run and full_sync and (auto_initial_full_sync or reset_cursor):
         state['last_change_id'] = next_change_id
         state['last_sync_at'] = now_iso()
