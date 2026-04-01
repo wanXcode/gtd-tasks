@@ -461,6 +461,58 @@ def check_reminder_completed(apple_reminder_id: str) -> bool:
     return None
 
 
+def reconcile_open_mapped_reminders(base_url: str = DEFAULT_API_URL) -> Dict[str, Any]:
+    """每轮同步都强制校正仍然 open 且已有 mapping 的 reminder。
+
+    目的：避免已有 reminder 因历史遗漏/局部失败而丢失标题、备注、日期或列表信息。
+    """
+    mappings = load_mappings()
+    if not mappings:
+        log('No local mappings, skipping open reminder reconcile')
+        return {'status': 'ok', 'refreshed': 0, 'skipped': 0, 'errors': 0, 'reason': 'no_mappings'}
+
+    tasks = get_all_open_tasks(base_url=base_url)
+    task_map = {str(task.get('id')): task for task in tasks if task.get('id')}
+
+    refreshed = 0
+    skipped = 0
+    errors = []
+
+    for task_id, reminder_id in mappings.items():
+        task = task_map.get(task_id)
+        if not task:
+            skipped += 1
+            continue
+
+        raw_title = task.get('title', '')
+        tags = list(task.get('tags') or [])
+        title = render_reminder_title(raw_title, tags)
+        note = render_reminder_note(task.get('note', '') or '', tags)
+        bucket = task.get('bucket', 'today')
+        due_date = bucket_to_due_date(bucket)
+        category = task.get('category', 'next_action')
+        list_name = CATEGORY_TO_LIST.get(category, BUCKET_TO_LIST.get(bucket, '下一步行动@NextAction'))
+
+        try:
+            run_reminders_backend('update', reminder_id=reminder_id, title=title, note=note, due_date=due_date)
+            run_reminders_backend('move', reminder_id=reminder_id, list_name=list_name)
+            refreshed += 1
+        except Exception as exc:
+            errors.append({'task_id': task_id, 'reminder_id': reminder_id, 'error': str(exc)})
+            log(f'Failed to reconcile mapped reminder {task_id} -> {reminder_id}: {exc}')
+
+    result = {
+        'status': 'ok' if not errors else 'partial',
+        'refreshed': refreshed,
+        'skipped': skipped,
+        'errors': len(errors),
+    }
+    if errors:
+        result['error_items'] = errors
+    return result
+
+
+
 def push_apple_completed_to_server(base_url: str = DEFAULT_API_URL) -> Dict[str, Any]:
     """将 Apple Reminders 的 completed 状态回写到服务端
     
@@ -586,12 +638,17 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: 
     else:
         log('Dry run mode, skipping Apple sync')
     
-    # 4. 回写 Apple completed 到服务端（优化版：只查询本地 mapping）
+    # 4. 强制校正仍然 open 且已有 mapping 的 reminder，避免日期/列表/标题历史遗漏
+    if not dry_run:
+        reconcile_result = reconcile_open_mapped_reminders(base_url=base_url)
+        log(f'Reconcile open reminders result: {reconcile_result}')
+
+    # 5. 回写 Apple completed 到服务端（优化版：只查询本地 mapping）
     if not dry_run:
         push_result = push_apple_completed_to_server(base_url=base_url)
         log(f'Push completed result: {push_result}')
     
-    # 5. Ack 已消费的变更
+    # 6. Ack 已消费的变更
     if not dry_run and ack_upto_change_id > last_change_id:
         try:
             ack_result = ack_changes(client_id, ack_upto_change_id, base_url=base_url)
