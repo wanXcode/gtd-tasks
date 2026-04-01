@@ -27,6 +27,8 @@ case "check-permission":
     JsonIO.printJSON(service.checkPermission())
 case "list-calendars":
     JsonIO.printJSON(service.listCalendars())
+case "preflight":
+    JsonIO.printJSON(service.preflight(payload))
 case "get":
     switch service.get(payload) {
     case .success(let ok): JsonIO.printJSON(ok)

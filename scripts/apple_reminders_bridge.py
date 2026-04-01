@@ -24,6 +24,9 @@ class ReminderBridge:
     def use_eventkit(self) -> bool:
         return self.backend == 'eventkit'
 
+    def preflight_eventkit(self, payload: Optional[Dict[str, Any]] = None, timeout: int = 60) -> Dict[str, Any]:
+        return self.run_eventkit('preflight', payload=payload, timeout=timeout)
+
     def run_eventkit(self, action: str, payload: Optional[Dict[str, Any]] = None, timeout: int = 60) -> Dict[str, Any]:
         if not self.bridge_path.exists():
             raise ReminderBridgeError(f'EventKit bridge not found: {self.bridge_path}')

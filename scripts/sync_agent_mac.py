@@ -244,6 +244,15 @@ def refresh_local_cache_from_api(base_url: str = DEFAULT_API_URL) -> Dict[str, s
     }
 
 
+def reminders_preflight(list_name: Optional[str] = None, calendar_id: Optional[str] = None) -> Dict[str, Any]:
+    bridge = ReminderBridge(backend='eventkit')
+    try:
+        return bridge.preflight_eventkit({'list_name': list_name, 'calendar_id': calendar_id}, timeout=20)
+    except ReminderBridgeError as exc:
+        raise RuntimeError(str(exc)) from exc
+
+
+
 def run_reminders_backend(action: str, **params) -> Dict[str, Any]:
     """统一的 Reminders 执行入口：仅使用 EventKit bridge。"""
     bridge = ReminderBridge(backend='eventkit')
@@ -331,6 +340,7 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     note = render_reminder_note(note, tags)
     due_date = bucket_to_due_date(bucket)
     list_name = CATEGORY_TO_LIST.get(category, BUCKET_TO_LIST.get(bucket, '下一步行动@NextAction'))
+    target_backend = backend_is_available(list_name=list_name)
 
     mappings = load_mappings()
 
@@ -347,6 +357,13 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
                 log(f'Failed to save mapping to server: {e}')
 
     def create_replacement_reminder(reason: str) -> Dict[str, Any]:
+        if not target_backend.get('available'):
+            return {
+                'status': 'deferred',
+                'reason': f'{reason}:backend_unavailable',
+                'task_id': task_id,
+                'backend_status': target_backend,
+            }
         result = run_reminders_backend('create', title=title, list_name=list_name, note=note, due_date=due_date)
         new_apple_id = str(result.get('reminder_id') or result.get('stdout', '')).strip()
         persist_mapping(new_apple_id)
@@ -379,6 +396,13 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
                         return create_replacement_reminder('recreated_missing_mapping_on_create')
                     raise
 
+            if not target_backend.get('available'):
+                return {
+                    'status': 'deferred',
+                    'reason': 'create:backend_unavailable',
+                    'task_id': task_id,
+                    'backend_status': target_backend,
+                }
             result = run_reminders_backend('create', title=title, list_name=list_name, note=note, due_date=due_date)
             apple_id = str(result.get('reminder_id') or result.get('stdout', '')).strip()
             persist_mapping(apple_id)
@@ -498,6 +522,25 @@ def check_reminder_completed(apple_reminder_id: str) -> bool:
     return None
 
 
+def backend_is_available(list_name: Optional[str] = None) -> Dict[str, Any]:
+    preflight = reminders_preflight(list_name=list_name)
+    info = preflight.get('preflight') or {}
+    permission = info.get('permission') or preflight.get('permission')
+    calendar_count = int(info.get('calendar_count') or 0)
+    requested_found = bool(info.get('requested_calendar_found')) if list_name else True
+    default_calendar_id = info.get('default_calendar_id')
+    available = permission == 'authorized' and calendar_count > 0 and (requested_found or bool(default_calendar_id))
+    return {
+        'available': available,
+        'permission': permission,
+        'calendar_count': calendar_count,
+        'requested_calendar_found': requested_found,
+        'default_calendar_id': default_calendar_id,
+        'preflight': preflight,
+    }
+
+
+
 def reconcile_open_mapped_reminders(base_url: str = DEFAULT_API_URL) -> Dict[str, Any]:
     """每轮同步都强制校正仍然 open 且已有 mapping 的 reminder。
 
@@ -529,6 +572,12 @@ def reconcile_open_mapped_reminders(base_url: str = DEFAULT_API_URL) -> Dict[str
         due_date = bucket_to_due_date(bucket)
         category = task.get('category', 'next_action')
         list_name = CATEGORY_TO_LIST.get(category, BUCKET_TO_LIST.get(bucket, '下一步行动@NextAction'))
+
+        backend_status = backend_is_available(list_name=list_name)
+        if not backend_status.get('available'):
+            skipped += 1
+            log_warn(f'Skip reconcile for {task_id} because backend unavailable for list {list_name}: {backend_status}')
+            continue
 
         try:
             run_reminders_backend('update', reminder_id=reminder_id, title=title, note=note, due_date=due_date)
@@ -625,6 +674,16 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: 
         log('Cursor reset requested; forcing last_change_id=0 for this run')
 
     log(f'Client: {client_id}, Last change_id: {last_change_id}')
+
+    backend_status = backend_is_available()
+    if not backend_status.get('available'):
+        log_warn(f'Reminders backend unavailable, skip sync run: {backend_status}')
+        return {
+            'status': 'deferred',
+            'phase': 'preflight',
+            'reason': 'backend_unavailable',
+            'backend_status': backend_status,
+        }
     
     # 1.5 同步服务端 mappings 到本地，避免 full-sync 重复创建
     synced_mappings = sync_mappings_from_server(base_url=base_url)
@@ -662,11 +721,16 @@ def run_sync(base_url: str = DEFAULT_API_URL, dry_run: bool = False, full_sync: 
             })
             log(f"Sync task {change.get('task', {}).get('id')}: {result['status']}")
 
-            # 只有连续成功的变更才允许推进 ack 游标；一旦遇到失败/跳过，立即停止，避免吞 change
+            # 只有连续成功的变更才允许推进 ack 游标；遇到 deferred 说明后端不健康，安全暂停；其他失败则停止避免吞 change
             if result.get('status') in {'created', 'updated', 'done', 'deleted'}:
                 change_id = change.get('change_id')
                 if isinstance(change_id, int) and change_id > ack_upto_change_id:
                     ack_upto_change_id = change_id
+            elif result.get('status') == 'deferred':
+                log_warn(
+                    f"Pause ack advancement at change_id={change.get('change_id')} due to deferred backend state"
+                )
+                break
             else:
                 log_warn(
                     f"Stop ack advancement at change_id={change.get('change_id')} due to status={result.get('status')}"
@@ -754,8 +818,8 @@ def main():
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     
-    # 返回非零退出码如果出错
-    if result.get('status') != 'ok':
+    # 返回非零退出码如果出错；deferred 表示后端暂时不可用，本轮安全跳过
+    if result.get('status') not in {'ok', 'deferred'}:
         sys.exit(1)
 
 

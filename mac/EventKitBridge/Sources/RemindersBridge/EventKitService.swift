@@ -22,29 +22,60 @@ final class EventKitService {
         return comps
     }
 
-    func checkPermission() -> BridgeSuccess {
+    private func currentPermission() -> String {
         let status = EKEventStore.authorizationStatus(for: .reminder)
-        let permission: String
         switch status {
         case .authorized, .fullAccess:
-            permission = "authorized"
+            return "authorized"
         case .denied:
-            permission = "denied"
+            return "denied"
         case .restricted:
-            permission = "restricted"
+            return "restricted"
         case .notDetermined:
-            permission = "not_determined"
+            return "not_determined"
         case .writeOnly:
-            permission = "write_only"
+            return "write_only"
         @unknown default:
-            permission = "unknown"
+            return "unknown"
         }
-        return BridgeSuccess(action: "check-permission", reminder_id: nil, calendars: nil, permission: permission, message: nil)
+    }
+
+    private func resolveCalendar(listName: String?, calendarId: String?) -> EKCalendar? {
+        if let calendarId, !calendarId.isEmpty {
+            if let byId = store.calendars(for: .reminder).first(where: { $0.calendarIdentifier == calendarId }) {
+                return byId
+            }
+        }
+        if let listName, !listName.isEmpty {
+            return findCalendar(named: listName)
+        }
+        return nil
+    }
+
+    func checkPermission() -> BridgeSuccess {
+        let permission = currentPermission()
+        return BridgeSuccess(action: "check-permission", reminder_id: nil, calendars: nil, permission: permission, message: nil, preflight: nil)
+    }
+
+    func preflight(_ payload: ReminderPayload?) -> BridgeSuccess {
+        let calendars = store.calendars(for: .reminder)
+        let requested = resolveCalendar(listName: payload?.list_name, calendarId: payload?.calendar_id)
+        let `default` = store.defaultCalendarForNewReminders()
+        let info = PreflightInfo(
+            permission: currentPermission(),
+            calendar_count: calendars.count,
+            default_calendar_id: `default`?.calendarIdentifier,
+            default_calendar_title: `default`?.title,
+            requested_list_name: payload?.list_name,
+            requested_calendar_id: requested?.calendarIdentifier ?? payload?.calendar_id,
+            requested_calendar_found: requested != nil
+        )
+        return BridgeSuccess(action: "preflight", reminder_id: nil, calendars: nil, permission: info.permission, message: nil, preflight: info)
     }
 
     func listCalendars() -> BridgeSuccess {
         let calendars = store.calendars(for: .reminder).map { CalendarInfo(id: $0.calendarIdentifier, title: $0.title) }
-        return BridgeSuccess(action: "list-calendars", reminder_id: nil, calendars: calendars, permission: nil, message: nil)
+        return BridgeSuccess(action: "list-calendars", reminder_id: nil, calendars: calendars, permission: nil, message: nil, preflight: nil)
     }
 
     func get(_ payload: ReminderPayload?) -> Result<BridgeSuccess, BridgeError> {
@@ -55,7 +86,7 @@ final class EventKitService {
             return .failure(BridgeError(action: "get", error_code: "REMINDER_NOT_FOUND", error_message: "reminder not found"))
         }
         let completed = reminder.isCompleted ? "completed" : "active"
-        return .success(BridgeSuccess(action: "get", reminder_id: reminder.calendarItemIdentifier, calendars: nil, permission: nil, message: completed))
+        return .success(BridgeSuccess(action: "get", reminder_id: reminder.calendarItemIdentifier, calendars: nil, permission: nil, message: completed, preflight: nil))
     }
 
     func create(_ payload: ReminderPayload?) -> Result<BridgeSuccess, BridgeError> {
@@ -67,13 +98,16 @@ final class EventKitService {
             reminder.title = title
             reminder.notes = payload.note
             reminder.dueDateComponents = parseDueDateComponents(payload.due_date)
-            if let listName = payload.list_name, let calendar = findCalendar(named: listName) {
+            if let calendar = resolveCalendar(listName: payload.list_name, calendarId: payload.calendar_id) {
                 reminder.calendar = calendar
             } else if reminder.calendar == nil, let `default` = store.defaultCalendarForNewReminders() {
                 reminder.calendar = `default`
             }
+            if reminder.calendar == nil {
+                return .failure(BridgeError(action: "create", error_code: "CALENDAR_UNAVAILABLE", error_message: "target/default calendar unavailable"))
+            }
             try store.save(reminder, commit: true)
-            return .success(BridgeSuccess(action: "create", reminder_id: reminder.calendarItemIdentifier, calendars: nil, permission: nil, message: nil))
+            return .success(BridgeSuccess(action: "create", reminder_id: reminder.calendarItemIdentifier, calendars: nil, permission: nil, message: nil, preflight: nil))
         } catch {
             return .failure(BridgeError(action: "create", error_code: "CREATE_FAILED", error_message: error.localizedDescription))
         }
@@ -93,7 +127,7 @@ final class EventKitService {
             reminder.notes = payload?.note
             reminder.dueDateComponents = parseDueDateComponents(payload?.due_date)
             try store.save(reminder, commit: true)
-            return .success(BridgeSuccess(action: "update", reminder_id: reminder.calendarItemIdentifier, calendars: nil, permission: nil, message: nil))
+            return .success(BridgeSuccess(action: "update", reminder_id: reminder.calendarItemIdentifier, calendars: nil, permission: nil, message: nil, preflight: nil))
         } catch {
             return .failure(BridgeError(action: "update", error_code: "UPDATE_FAILED", error_message: error.localizedDescription))
         }
@@ -109,13 +143,13 @@ final class EventKitService {
         guard let reminder = store.calendarItem(withIdentifier: reminderId) as? EKReminder else {
             return .failure(BridgeError(action: "move", error_code: "REMINDER_NOT_FOUND", error_message: "reminder not found"))
         }
-        guard let calendar = findCalendar(named: listName) else {
+        guard let calendar = resolveCalendar(listName: listName, calendarId: payload?.calendar_id) else {
             return .failure(BridgeError(action: "move", error_code: "LIST_NOT_FOUND", error_message: "target list not found"))
         }
         do {
             reminder.calendar = calendar
             try store.save(reminder, commit: true)
-            return .success(BridgeSuccess(action: "move", reminder_id: reminder.calendarItemIdentifier, calendars: nil, permission: nil, message: nil))
+            return .success(BridgeSuccess(action: "move", reminder_id: reminder.calendarItemIdentifier, calendars: nil, permission: nil, message: nil, preflight: nil))
         } catch {
             return .failure(BridgeError(action: "move", error_code: "MOVE_FAILED", error_message: error.localizedDescription))
         }
@@ -136,7 +170,7 @@ final class EventKitService {
                 reminder.completionDate = nil
             }
             try store.save(reminder, commit: true)
-            return .success(BridgeSuccess(action: "complete", reminder_id: reminder.calendarItemIdentifier, calendars: nil, permission: nil, message: nil))
+            return .success(BridgeSuccess(action: "complete", reminder_id: reminder.calendarItemIdentifier, calendars: nil, permission: nil, message: nil, preflight: nil))
         } catch {
             return .failure(BridgeError(action: "complete", error_code: "COMPLETE_FAILED", error_message: error.localizedDescription))
         }
@@ -151,7 +185,7 @@ final class EventKitService {
         }
         do {
             try store.remove(reminder, commit: true)
-            return .success(BridgeSuccess(action: "delete", reminder_id: reminderId, calendars: nil, permission: nil, message: nil))
+            return .success(BridgeSuccess(action: "delete", reminder_id: reminderId, calendars: nil, permission: nil, message: nil, preflight: nil))
         } catch {
             return .failure(BridgeError(action: "delete", error_code: "DELETE_FAILED", error_message: error.localizedDescription))
         }
