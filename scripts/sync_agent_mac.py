@@ -249,15 +249,29 @@ def run_reminders_backend(action: str, **params) -> Dict[str, Any]:
     bridge_action = action_map.get(action)
     if not bridge_action:
         raise ValueError(f'Unsupported backend action: {action}')
-    try:
-        result = bridge.run_eventkit(bridge_action, params)
-        if isinstance(result, dict):
-            if 'stdout' not in result and result.get('reminder_id'):
-                result['stdout'] = str(result.get('reminder_id'))
-            return result
-        return {'stdout': str(result), 'stderr': ''}
-    except ReminderBridgeError as exc:
-        raise RuntimeError(str(exc)) from exc
+
+    retries = 3 if action in {'update', 'move', 'complete', 'delete'} else 2
+    last_exc: Optional[Exception] = None
+    for attempt in range(retries):
+        try:
+            result = bridge.run_eventkit(bridge_action, params)
+            if isinstance(result, dict):
+                if 'stdout' not in result and result.get('reminder_id'):
+                    result['stdout'] = str(result.get('reminder_id'))
+                return result
+            return {'stdout': str(result), 'stderr': ''}
+        except ReminderBridgeError as exc:
+            last_exc = exc
+            message = str(exc)
+            is_not_found = 'REMINDER_NOT_FOUND' in message
+            if attempt < retries - 1 and is_not_found:
+                time.sleep(0.4 * (attempt + 1))
+                continue
+            raise RuntimeError(message) from exc
+
+    if last_exc is not None:
+        raise RuntimeError(str(last_exc)) from last_exc
+    raise RuntimeError(f'Unexpected reminder backend failure: action={action}')
 
 
 def normalize_tags(tags: List[Any]) -> List[str]:
