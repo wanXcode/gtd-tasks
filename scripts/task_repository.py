@@ -47,6 +47,7 @@ class TaskRepository(ABC):
         bucket: str = 'future',
         quadrant: str = 'q2',
         note: str = '',
+        due_date: Optional[str] = None,
         tags: Optional[List[str]] = None,
         category: Optional[str] = None,
         source: str = 'cli',
@@ -152,6 +153,7 @@ class LocalJsonTaskRepository(TaskRepository):
         task.setdefault('quadrant', 'q2')
         task.setdefault('tags', [])
         task.setdefault('note', '')
+        task.setdefault('due_date', None)
         task.setdefault('category', self.infer_category(task))
         task.setdefault('source', 'manual')
         task.setdefault('source_task_id', None)
@@ -197,7 +199,7 @@ class LocalJsonTaskRepository(TaskRepository):
                 return task
         raise RepositoryError(f'task not found: {task_id}')
 
-    def add_task(self, title, *, bucket='future', quadrant='q2', note='', tags=None, category=None, source='cli'):
+    def add_task(self, title, *, bucket='future', quadrant='q2', note='', due_date=None, tags=None, category=None, source='cli'):
         data = self.load_data()
         task = self.normalize_task({
             'id': self.next_id(data['tasks']),
@@ -207,6 +209,7 @@ class LocalJsonTaskRepository(TaskRepository):
             'quadrant': quadrant,
             'tags': sorted(set(tags or [])),
             'note': note or '',
+            'due_date': due_date,
             'category': category or None,
             'source': source,
             'created_at': self.now_iso(),
@@ -220,7 +223,7 @@ class LocalJsonTaskRepository(TaskRepository):
     def update_task(self, task_id, updates):
         data = self.load_data()
         task = self.find_task(data, task_id)
-        for key in ['title', 'bucket', 'quadrant', 'note', 'category']:
+        for key in ['title', 'bucket', 'quadrant', 'note', 'due_date', 'category']:
             if key in updates and updates[key] is not None:
                 task[key] = updates[key]
         if updates.get('status') is not None:
@@ -342,7 +345,7 @@ class ApiTaskRepository(TaskRepository):
             return response
         raise RepositoryError('unexpected api response, task object not found')
 
-    def add_task(self, title, *, bucket='future', quadrant='q2', note='', tags=None, category=None, source='cli'):
+    def add_task(self, title, *, bucket='future', quadrant='q2', note='', due_date=None, tags=None, category=None, source='cli'):
         task = self._extract_task(self._request('POST', '/api/tasks', {
             'title': title,
             'status': 'open',
@@ -350,6 +353,7 @@ class ApiTaskRepository(TaskRepository):
             'quadrant': quadrant,
             'tags': sorted(set(tags or [])),
             'note': note or '',
+            'due_date': due_date,
             'category': category,
             'source': source,
         }))
@@ -357,7 +361,7 @@ class ApiTaskRepository(TaskRepository):
 
     def update_task(self, task_id, updates):
         payload = {}
-        for key in ['title', 'bucket', 'quadrant', 'note', 'category', 'status']:
+        for key in ['title', 'bucket', 'quadrant', 'note', 'due_date', 'category', 'status']:
             if updates.get(key) is not None:
                 payload[key] = updates[key]
         if updates.get('set_tags') is not None:

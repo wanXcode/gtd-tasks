@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   quadrant TEXT NOT NULL,
   tags_json TEXT NOT NULL DEFAULT '[]',
   note TEXT NOT NULL DEFAULT '',
+  due_date TEXT,
   category TEXT,
   source TEXT,
   source_task_id TEXT,
@@ -109,4 +110,7 @@ def init_db(db_path: Optional[str] = None) -> Path:
     path = get_db_path(db_path)
     with get_conn(str(path)) as conn:
         conn.executescript(SCHEMA_SQL)
+        cols = {row['name'] for row in conn.execute("PRAGMA table_info(tasks)").fetchall()}
+        if 'due_date' not in cols:
+            conn.execute("ALTER TABLE tasks ADD COLUMN due_date TEXT")
     return path

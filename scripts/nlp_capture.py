@@ -56,6 +56,9 @@ CATEGORY_HINTS = {
     'next_action': ['给', '整理', '发送', '沟通', '安排', '处理', '推进', '确认一下', '回信'],
     'maybe': ['以后', '先放未来', '晚点', '有空再', '再说', '也许', '可能'],
 }
+WEEKDAY_MAP = {
+    '一': 0, '二': 1, '三': 2, '四': 3, '五': 4, '六': 5, '日': 6, '天': 6,
+}
 
 
 def now_dt():
@@ -74,7 +77,63 @@ def clean_spaces(text: str) -> str:
     return text
 
 
-def detect_bucket(text: str, default_bucket: str = DEFAULT_BUCKET):
+def detect_due_date(text: str):
+    now = now_dt().date()
+
+    if '今天' in text or '今日' in text:
+        return now.isoformat()
+    if '明天' in text or '明日' in text:
+        return (now + timedelta(days=1)).isoformat()
+    if '后天' in text:
+        return (now + timedelta(days=2)).isoformat()
+
+    m = re.search(r'(?:截止到|截止|到|在)?\s*(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})日?', text)
+    if m:
+        year, month, day = map(int, m.groups())
+        try:
+            return datetime(year, month, day, tzinfo=TZ).date().isoformat()
+        except ValueError:
+            return None
+
+    m = re.search(r'(?:截止到|截止|到|在)?\s*(\d{1,2})[-/.月](\d{1,2})日?', text)
+    if m:
+        month, day = map(int, m.groups())
+        year = now.year
+        try:
+            candidate = datetime(year, month, day, tzinfo=TZ).date()
+        except ValueError:
+            return None
+        if candidate < now:
+            try:
+                candidate = datetime(year + 1, month, day, tzinfo=TZ).date()
+            except ValueError:
+                return None
+        return candidate.isoformat()
+
+    m = re.search(r'(下周)?周([一二三四五六日天])', text)
+    if m:
+        is_next_week = bool(m.group(1))
+        target = WEEKDAY_MAP[m.group(2)]
+        current = now.weekday()
+        delta = (target - current) % 7
+        if delta == 0:
+            delta = 7
+        if is_next_week:
+            delta += 7
+        return (now + timedelta(days=delta)).isoformat()
+
+    return None
+
+
+def detect_bucket(text: str, default_bucket: str = DEFAULT_BUCKET, due_date: str | None = None):
+    if due_date:
+        now = now_dt().date().isoformat()
+        tomorrow = (now_dt().date() + timedelta(days=1)).isoformat()
+        if due_date == now:
+            return 'today'
+        if due_date == tomorrow:
+            return 'tomorrow'
+        return 'future'
     for bucket, kws in BUCKET_KEYWORDS:
         if any(kw in text for kw in kws):
             return bucket
@@ -133,7 +192,10 @@ def extract_note(text: str):
 def strip_tags_and_meta(text: str):
     text = re.sub(r'#[A-Za-z][A-Za-z0-9_-]*', ' ', text)
     meta_patterns = [
-        r'今天', r'今日', r'今晚', r'明天', r'明日', r'下周', r'以后',
+        r'今天', r'今日', r'今晚', r'明天', r'明日', r'后天', r'下周', r'以后',
+        r'(?:下周)?周[一二三四五六日天]',
+        r'\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}日?',
+        r'\d{1,2}[-/.月]\d{1,2}日?',
         r'提醒我', r'帮我', r'记得', r'记一下', r'记录一下', r'新增任务',
         r'我来处理', r'我自己做', r'我自己处理', r'我来做', r'我跟进', r'亲自处理',
         r'先放未来', r'放未来', r'等确认', r'等回复', r'待确认', r'待回复',
@@ -178,7 +240,8 @@ def detect_category(text: str, bucket: str, tags):
 
 def build_preview(text: str, default_bucket: str, default_quadrant: str):
     raw = clean_spaces(text)
-    bucket = detect_bucket(raw, default_bucket)
+    due_date = detect_due_date(raw)
+    bucket = detect_bucket(raw, default_bucket, due_date=due_date)
     tags = detect_tags(raw)
     quadrant = detect_quadrant(raw, bucket, default_quadrant)
     note = extract_note(raw)
@@ -188,6 +251,7 @@ def build_preview(text: str, default_bucket: str, default_quadrant: str):
         'input': raw,
         'title': title,
         'bucket': bucket,
+        'due_date': due_date,
         'quadrant': quadrant,
         'category': category,
         'tags': tags,
@@ -214,6 +278,7 @@ def apply_capture(preview, sync_apple_reminders=False):
         bucket=preview['bucket'],
         quadrant=preview['quadrant'],
         note=preview.get('note', ''),
+        due_date=preview.get('due_date'),
         tags=preview.get('tags', []),
         category=preview.get('category'),
         source='nlp',

@@ -1,12 +1,23 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 VALID_BUCKETS = ['today', 'tomorrow', 'future', 'archive']
 VALID_QUADRANTS = ['q1', 'q2', 'q3', 'q4']
 VALID_STATUSES = ['open', 'done', 'cancelled', 'archived']
 VALID_CATEGORIES = ['inbox', 'project', 'next_action', 'waiting_for', 'maybe']
+
+
+def _validate_due_date(value: Optional[str]) -> Optional[str]:
+    if value in (None, ''):
+        return None
+    try:
+        datetime.strptime(value, '%Y-%m-%d')
+    except ValueError as exc:
+        raise SchemaError(f'invalid due_date: {value}') from exc
+    return value
 
 
 class SchemaError(ValueError):
@@ -21,6 +32,7 @@ class TaskCreate:
     quadrant: str = 'q2'
     tags: List[str] = field(default_factory=list)
     note: str = ''
+    due_date: Optional[str] = None
     category: Optional[str] = 'inbox'
     source: Optional[str] = 'api'
     source_task_id: Optional[str] = None
@@ -38,6 +50,7 @@ class TaskCreate:
             raise SchemaError(f'invalid category: {self.category}')
         self.tags = sorted(set(self.tags or []))
         self.note = self.note or ''
+        self.due_date = _validate_due_date(self.due_date)
         return self
 
 
@@ -49,6 +62,7 @@ class TaskUpdate:
     quadrant: Optional[str] = None
     tags: Optional[List[str]] = None
     note: Optional[str] = None
+    due_date: Optional[str] = None
     category: Optional[str] = None
     source: Optional[str] = None
     source_task_id: Optional[str] = None
@@ -67,6 +81,7 @@ class TaskUpdate:
             raise SchemaError(f'invalid category: {self.category}')
         if self.tags is not None:
             self.tags = sorted(set(self.tags))
+        self.due_date = _validate_due_date(self.due_date)
         return self
 
     def to_patch_dict(self) -> Dict[str, Any]:

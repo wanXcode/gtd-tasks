@@ -97,6 +97,7 @@ def format_task(task, verbose=False):
         f"  category={task.get('category', '-') }\n"
         f"  tags={tags}\n"
         f"  note={note}\n"
+        f"  due_date={task.get('due_date') or '-'}\n"
         f"  updated_at={task.get('updated_at')}\n"
         f"  completed_at={task.get('completed_at')}"
     )
@@ -109,6 +110,7 @@ def cmd_add(args):
         bucket=args.bucket,
         quadrant=args.quadrant,
         note=args.note or '',
+        due_date=args.due_date,
         tags=args.tags or [],
         category=args.category,
         source='cli',
@@ -129,6 +131,8 @@ def cmd_update(args):
         updates['quadrant'] = args.quadrant
     if args.note is not None:
         updates['note'] = args.note
+    if args.due_date is not None:
+        updates['due_date'] = args.due_date
     if args.category is not None:
         updates['category'] = args.category
     if args.status is not None:
@@ -244,6 +248,7 @@ def build_parser():
     p.add_argument('--bucket', default='future', choices=VALID_BUCKETS)
     p.add_argument('--quadrant', default='q2', choices=VALID_QUADRANTS)
     p.add_argument('--note')
+    p.add_argument('--due-date')
     p.add_argument('--tags', nargs='*')
     p.add_argument('--category', choices=VALID_CATEGORIES)
     add_sync_flag(p)
@@ -255,6 +260,7 @@ def build_parser():
     p.add_argument('--bucket', choices=VALID_BUCKETS)
     p.add_argument('--quadrant', choices=VALID_QUADRANTS)
     p.add_argument('--note')
+    p.add_argument('--due-date')
     p.add_argument('--category', choices=VALID_CATEGORIES)
     p.add_argument('--status', choices=VALID_STATUSES)
     p.add_argument('--set-tags', nargs='*')

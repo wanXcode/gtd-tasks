@@ -14,6 +14,7 @@ class Task:
     quadrant: str = 'q2'
     tags: List[str] = field(default_factory=list)
     note: str = ''
+    due_date: Optional[str] = None
     category: Optional[str] = 'inbox'
     source: Optional[str] = 'manual'
     source_task_id: Optional[str] = None
@@ -35,6 +36,7 @@ class Task:
         data = dict(payload)
         data.setdefault('tags', [])
         data.setdefault('note', '')
+        data.setdefault('due_date', None)
         data.setdefault('status', 'open')
         data.setdefault('bucket', 'future')
         data.setdefault('quadrant', 'q2')

@@ -323,6 +323,13 @@ def bucket_to_due_date(bucket: str) -> Optional[str]:
     return None
 
 
+def resolve_due_date(task: Dict[str, Any]) -> Optional[str]:
+    due_date = task.get('due_date')
+    if due_date:
+        return str(due_date)
+    return bucket_to_due_date(task.get('bucket', 'today'))
+
+
 def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     """将单个任务变更同步到 Apple Reminders"""
     task = change.get('task', {})
@@ -338,7 +345,7 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     tags = list(task.get('tags') or [])
     title = render_reminder_title(raw_title, tags)
     note = render_reminder_note(note, tags)
-    due_date = bucket_to_due_date(bucket)
+    due_date = resolve_due_date(task)
     list_name = CATEGORY_TO_LIST.get(category, BUCKET_TO_LIST.get(bucket, '下一步行动@NextAction'))
     target_backend = backend_is_available(list_name=list_name)
 
@@ -569,7 +576,7 @@ def reconcile_open_mapped_reminders(base_url: str = DEFAULT_API_URL) -> Dict[str
         title = render_reminder_title(raw_title, tags)
         note = render_reminder_note(task.get('note', '') or '', tags)
         bucket = task.get('bucket', 'today')
-        due_date = bucket_to_due_date(bucket)
+        due_date = resolve_due_date(task)
         category = task.get('category', 'next_action')
         list_name = CATEGORY_TO_LIST.get(category, BUCKET_TO_LIST.get(bucket, '下一步行动@NextAction'))
 

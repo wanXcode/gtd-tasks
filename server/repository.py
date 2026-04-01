@@ -26,11 +26,11 @@ class TaskRepository:
             conn.execute(
                 '''
                 INSERT INTO tasks (
-                    id, title, status, bucket, quadrant, tags_json, note, category,
+                    id, title, status, bucket, quadrant, tags_json, note, due_date, category,
                     source, source_task_id, sync_version, created_at, updated_at,
                     completed_at, deleted_at, last_synced_at
                 ) VALUES (
-                    :id, :title, :status, :bucket, :quadrant, :tags_json, :note, :category,
+                    :id, :title, :status, :bucket, :quadrant, :tags_json, :note, :due_date, :category,
                     :source, :source_task_id, :sync_version, :created_at, :updated_at,
                     :completed_at, :deleted_at, :last_synced_at
                 )
@@ -41,6 +41,7 @@ class TaskRepository:
                     quadrant=excluded.quadrant,
                     tags_json=excluded.tags_json,
                     note=excluded.note,
+                    due_date=excluded.due_date,
                     category=excluded.category,
                     source=excluded.source,
                     source_task_id=excluded.source_task_id,
