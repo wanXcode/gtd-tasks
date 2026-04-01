@@ -170,6 +170,17 @@ class TaskService:
         self.repo.save_apple_mapping(task_id, apple_reminder_id)
         return {'task_id': task_id, 'apple_reminder_id': apple_reminder_id, 'status': 'saved'}
 
+    def delete_apple_mapping(self, task_id: str) -> Dict[str, Any]:
+        mapping = self.repo.get_apple_mapping(task_id)
+        if not mapping:
+            return {'task_id': task_id, 'status': 'not_found'}
+        self.repo.delete_apple_mapping(task_id)
+        return {
+            'task_id': task_id,
+            'apple_reminder_id': mapping.apple_reminder_id,
+            'status': 'deleted',
+        }
+
     def cleanup_orphan_apple_mappings(self) -> Dict[str, Any]:
         mappings = self.repo.list_apple_mappings()
         removed = []

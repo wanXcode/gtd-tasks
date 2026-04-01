@@ -173,6 +173,12 @@ class AppHandler(BaseHTTPRequestHandler):
                 return json_response(self, self.task_service.delete(task_id))
             except TaskNotFoundError:
                 return json_response(self, {'error': 'task not found'}, status=404)
+        if parsed.path.startswith('/api/apple/mappings/'):
+            task_id = parsed.path.rsplit('/', 1)[-1]
+            result = self.task_service.delete_apple_mapping(task_id)
+            if result.get('status') == 'not_found':
+                return json_response(self, result, status=404)
+            return json_response(self, result)
         return json_response(self, {'error': 'not found'}, status=404)
 
 
