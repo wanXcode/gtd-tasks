@@ -25,6 +25,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -430,18 +431,34 @@ def check_reminder_completed(apple_reminder_id: str) -> bool:
 
     if str(apple_reminder_id).startswith('x-apple-reminder://'):
         return None
-    try:
-        bridge = ReminderBridge(backend='eventkit')
-        result = bridge.run_eventkit('get', {'reminder_id': apple_reminder_id}, timeout=10)
-        if result.get('success') is True:
-            status = result.get('message', '')
-            if status == 'completed':
-                return True
-            if status == 'active':
-                return False
-        return None
-    except Exception:
-        return None
+
+    bridge = ReminderBridge(backend='eventkit')
+    last_error: Optional[Exception] = None
+    for attempt in range(2):
+        try:
+            result = bridge.run_eventkit('get', {'reminder_id': apple_reminder_id}, timeout=10)
+            if result.get('success') is True:
+                status = result.get('message', '')
+                if status == 'completed':
+                    return True
+                if status == 'active':
+                    return False
+                log(f'Reminder {apple_reminder_id} returned unknown status: {status!r}')
+                return None
+
+            log(f'Reminder {apple_reminder_id} get returned non-success payload: {result}')
+            return None
+        except Exception as exc:
+            last_error = exc
+            if attempt == 0:
+                time.sleep(0.5)
+                continue
+            log(f'Reminder {apple_reminder_id} get failed after retry: {exc!r}')
+            return None
+
+    if last_error is not None:
+        log(f'Reminder {apple_reminder_id} get failed: {last_error!r}')
+    return None
 
 
 def push_apple_completed_to_server(base_url: str = DEFAULT_API_URL) -> Dict[str, Any]:
