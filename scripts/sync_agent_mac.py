@@ -297,7 +297,7 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     task = change.get('task', {})
     if not task:
         return {'status': 'skipped', 'reason': 'no_task_data'}
-    
+
     action = change.get('action')
     task_id = task.get('id')
     raw_title = task.get('title', '')
@@ -308,100 +308,115 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
     title = render_reminder_title(raw_title, tags)
     note = render_reminder_note(note, tags)
     due_date = bucket_to_due_date(bucket)
-    # 优先使用 category 映射，否则用 bucket 映射
     list_name = CATEGORY_TO_LIST.get(category, BUCKET_TO_LIST.get(bucket, '下一步行动@NextAction'))
-    
-    # 获取现有的 Apple mapping（如果有）
-    # 这里简化处理，实际应该查询本地缓存或服务端
-    
-    # 加载本地 mapping
+
     mappings = load_mappings()
-    
+
+    def persist_mapping(new_apple_id: str) -> None:
+        if new_apple_id and task_id:
+            mappings[task_id] = new_apple_id
+            save_mappings(mappings)
+            log(f'Saved local mapping: {task_id} -> {new_apple_id}')
+            try:
+                api_request('POST', '/api/apple/mappings', {
+                    'mappings': [{'task_id': task_id, 'apple_reminder_id': new_apple_id}]
+                }, base_url=DEFAULT_API_URL)
+            except Exception as e:
+                log(f'Failed to save mapping to server: {e}')
+
+    def create_replacement_reminder(reason: str) -> Dict[str, Any]:
+        result = run_reminders_backend('create', title=title, list_name=list_name, note=note, due_date=due_date)
+        new_apple_id = str(result.get('reminder_id') or result.get('stdout', '')).strip()
+        persist_mapping(new_apple_id)
+        return {
+            'status': 'updated',
+            'reason': reason,
+            'task_id': task_id,
+            'apple_reminder_id': new_apple_id,
+            'stdout': result.get('stdout', ''),
+        }
+
     try:
         if action == 'create':
-            # full-sync / 补同步场景下，如果已有 mapping，不应直接跳过，而应刷新已有 reminder 的标题/备注/列表
             if task_id and task_id in mappings:
                 existing_apple_id = mappings[task_id]
-                update_result = run_reminders_backend('update', reminder_id=existing_apple_id, title=title, note=note, due_date=due_date)
-                move_result = None
                 try:
+                    update_result = run_reminders_backend('update', reminder_id=existing_apple_id, title=title, note=note, due_date=due_date)
                     move_result = run_reminders_backend('move', reminder_id=existing_apple_id, list_name=list_name)
-                except Exception as move_exc:
                     return {
-                        'status': 'error',
-                        'reason': f'full_sync_move_failed: {move_exc}',
+                        'status': 'updated',
+                        'reason': 'already_mapped_refreshed',
                         'task_id': task_id,
                         'apple_reminder_id': existing_apple_id,
+                        'update_stdout': update_result.get('stdout', ''),
+                        'move_stdout': move_result.get('stdout', ''),
                     }
-                return {
-                    'status': 'updated',
-                    'reason': 'already_mapped_refreshed',
-                    'task_id': task_id,
-                    'apple_reminder_id': existing_apple_id,
-                    'update_stdout': update_result.get('stdout', ''),
-                    'move_stdout': (move_result or {}).get('stdout', ''),
-                }
-            
-            # 创建新 reminder
+                except Exception as exc:
+                    if 'REMINDER_NOT_FOUND' in str(exc):
+                        log(f'Mapped reminder missing during create refresh, recreating: task_id={task_id}, reminder_id={existing_apple_id}')
+                        return create_replacement_reminder('recreated_missing_mapping_on_create')
+                    raise
+
             result = run_reminders_backend('create', title=title, list_name=list_name, note=note, due_date=due_date)
             apple_id = str(result.get('reminder_id') or result.get('stdout', '')).strip()
-            # 保存到本地 mapping
-            if apple_id and task_id:
-                mappings[task_id] = apple_id
-                save_mappings(mappings)
-                log(f'Saved local mapping: {task_id} -> {apple_id}')
-                # 同时回写到服务端
-                try:
-                    api_request('POST', '/api/apple/mappings', {
-                        'mappings': [{'task_id': task_id, 'apple_reminder_id': apple_id}]
-                    }, base_url=DEFAULT_API_URL)
-                except Exception as e:
-                    log(f'Failed to save mapping to server: {e}')
+            persist_mapping(apple_id)
             return {'status': 'created', 'task_id': task_id, 'apple_reminder_id': apple_id}
-        
+
         elif action == 'update':
             if not task_id or task_id not in mappings:
-                return {'status': 'skipped', 'reason': 'update_missing_mapping', 'task_id': task_id}
+                log(f'Update missing mapping, creating replacement reminder: task_id={task_id}')
+                return create_replacement_reminder('recreated_missing_mapping_on_update')
 
             apple_id = mappings[task_id]
-            update_result = run_reminders_backend('update', reminder_id=apple_id, title=title, note=note, due_date=due_date)
-            move_result = None
             try:
+                update_result = run_reminders_backend('update', reminder_id=apple_id, title=title, note=note, due_date=due_date)
                 move_result = run_reminders_backend('move', reminder_id=apple_id, list_name=list_name)
-            except Exception as move_exc:
                 return {
-                    'status': 'error',
-                    'reason': f'update_move_failed: {move_exc}',
+                    'status': 'updated',
                     'task_id': task_id,
                     'apple_reminder_id': apple_id,
+                    'update_stdout': update_result.get('stdout', ''),
+                    'move_stdout': move_result.get('stdout', ''),
                 }
-            return {
-                'status': 'updated',
-                'task_id': task_id,
-                'apple_reminder_id': apple_id,
-                'update_stdout': update_result.get('stdout', ''),
-                'move_stdout': (move_result or {}).get('stdout', ''),
-            }
-        
+            except Exception as exc:
+                if 'REMINDER_NOT_FOUND' in str(exc):
+                    log(f'Mapped reminder missing during update, recreating: task_id={task_id}, reminder_id={apple_id}')
+                    return create_replacement_reminder('recreated_missing_mapping_on_update')
+                raise
+
         elif action == 'done':
             if not task_id or task_id not in mappings:
                 return {'status': 'skipped', 'reason': 'done_missing_mapping', 'task_id': task_id}
 
             apple_id = mappings[task_id]
-            result = run_reminders_backend('complete', reminder_id=apple_id)
-            return {
-                'status': 'done',
-                'task_id': task_id,
-                'apple_reminder_id': apple_id,
-                'stdout': result.get('stdout', ''),
-            }
-        
+            try:
+                result = run_reminders_backend('complete', reminder_id=apple_id)
+                return {
+                    'status': 'done',
+                    'task_id': task_id,
+                    'apple_reminder_id': apple_id,
+                    'stdout': result.get('stdout', ''),
+                }
+            except Exception as exc:
+                if 'REMINDER_NOT_FOUND' in str(exc):
+                    mappings.pop(task_id, None)
+                    save_mappings(mappings)
+                    log(f'Removed stale mapping after missing reminder on done: task_id={task_id}, reminder_id={apple_id}')
+                    return {'status': 'done', 'reason': 'missing_mapping_dropped_on_done', 'task_id': task_id, 'apple_reminder_id': apple_id}
+                raise
+
         elif action == 'delete':
             if not task_id or task_id not in mappings:
                 return {'status': 'skipped', 'reason': 'delete_missing_mapping', 'task_id': task_id}
 
             apple_id = mappings[task_id]
-            result = run_reminders_backend('delete', reminder_id=apple_id)
+            try:
+                result = run_reminders_backend('delete', reminder_id=apple_id)
+            except Exception as exc:
+                if 'REMINDER_NOT_FOUND' not in str(exc):
+                    raise
+                result = {'stdout': ''}
+                log(f'Mapped reminder already missing during delete: task_id={task_id}, reminder_id={apple_id}')
             mappings.pop(task_id, None)
             save_mappings(mappings)
             return {
@@ -410,10 +425,10 @@ def sync_task_to_apple(change: Dict[str, Any]) -> Dict[str, Any]:
                 'apple_reminder_id': apple_id,
                 'stdout': result.get('stdout', ''),
             }
-        
+
         else:
             return {'status': 'skipped', 'reason': f'unknown_action_{action}'}
-    
+
     except Exception as exc:
         return {'status': 'error', 'reason': str(exc)}
 
