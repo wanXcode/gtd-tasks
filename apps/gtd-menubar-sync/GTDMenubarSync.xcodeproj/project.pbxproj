@@ -1,0 +1,328 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+	A001 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F001 /* AppState.swift */; };
+	A002 /* GTDMenubarSyncApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F002 /* GTDMenubarSyncApp.swift */; };
+	A003 /* SyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F003 /* SyncModels.swift */; };
+	A004 /* TaskModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F004 /* TaskModels.swift */; };
+	A005 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F005 /* AppLogger.swift */; };
+	A006 /* LocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F006 /* LocalStore.swift */; };
+	A007 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F007 /* PermissionManager.swift */; };
+	A008 /* RemindersStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F008 /* RemindersStore.swift */; };
+	A009 /* ServerAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = F009 /* ServerAPI.swift */; };
+	A010 /* SyncEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F010 /* SyncEngine.swift */; };
+	A011 /* SyncMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F011 /* SyncMapper.swift */; };
+	A012 /* MenuBarRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F012 /* MenuBarRootView.swift */; };
+	A013 /* StatusSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F013 /* StatusSectionView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+	P001 /* GTDMenubarSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GTDMenubarSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
+	F001 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+	F002 /* GTDMenubarSyncApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GTDMenubarSyncApp.swift; sourceTree = "<group>"; };
+	F003 /* SyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncModels.swift; sourceTree = "<group>"; };
+	F004 /* TaskModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskModels.swift; sourceTree = "<group>"; };
+	F005 /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
+	F006 /* LocalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStore.swift; sourceTree = "<group>"; };
+	F007 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
+	F008 /* RemindersStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersStore.swift; sourceTree = "<group>"; };
+	F009 /* ServerAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerAPI.swift; sourceTree = "<group>"; };
+	F010 /* SyncEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncEngine.swift; sourceTree = "<group>"; };
+	F011 /* SyncMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMapper.swift; sourceTree = "<group>"; };
+	F012 /* MenuBarRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarRootView.swift; sourceTree = "<group>"; };
+	F013 /* StatusSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusSectionView.swift; sourceTree = "<group>"; };
+	I001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+	E001 /* GTDMenubarSync.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GTDMenubarSync.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+	B001 /* Frameworks */ = {
+		isa = PBXFrameworksBuildPhase;
+		buildActionMask = 2147483647;
+		files = (
+		);
+		runOnlyForDeploymentPostprocessing = 0;
+	};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+	G000 = {
+		isa = PBXGroup;
+		children = (
+			G100 /* App */,
+			G101 /* Sources */,
+			G102 /* Products */,
+		);
+		sourceTree = "<group>";
+	};
+	G100 /* App */ = {
+		isa = PBXGroup;
+		children = (
+			I001 /* Info.plist */,
+			E001 /* GTDMenubarSync.entitlements */,
+		);
+		path = App;
+		sourceTree = "<group>";
+	};
+	G101 /* Sources */ = {
+		isa = PBXGroup;
+		children = (
+			G201 /* App */,
+			G202 /* Models */,
+			G203 /* Services */,
+			G204 /* UI */,
+		);
+		path = Sources/GTDMenubarSync;
+		sourceTree = SOURCE_ROOT;
+	};
+	G102 /* Products */ = {
+		isa = PBXGroup;
+		children = (
+			P001 /* GTDMenubarSync.app */,
+		);
+		name = Products;
+		sourceTree = "<group>";
+	};
+	G201 /* App */ = {
+		isa = PBXGroup;
+		children = (
+			F001 /* AppState.swift */,
+			F002 /* GTDMenubarSyncApp.swift */,
+		);
+		path = App;
+		sourceTree = "<group>";
+	};
+	G202 /* Models */ = {
+		isa = PBXGroup;
+		children = (
+			F003 /* SyncModels.swift */,
+			F004 /* TaskModels.swift */,
+		);
+		path = Models;
+		sourceTree = "<group>";
+	};
+	G203 /* Services */ = {
+		isa = PBXGroup;
+		children = (
+			F005 /* AppLogger.swift */,
+			F006 /* LocalStore.swift */,
+			F007 /* PermissionManager.swift */,
+			F008 /* RemindersStore.swift */,
+			F009 /* ServerAPI.swift */,
+			F010 /* SyncEngine.swift */,
+			F011 /* SyncMapper.swift */,
+		);
+		path = Services;
+		sourceTree = "<group>";
+	};
+	G204 /* UI */ = {
+		isa = PBXGroup;
+		children = (
+			F012 /* MenuBarRootView.swift */,
+			F013 /* StatusSectionView.swift */,
+		);
+		path = UI;
+		sourceTree = "<group>";
+	};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+	T001 /* GTDMenubarSync */ = {
+		isa = PBXNativeTarget;
+		buildConfigurationList = C001 /* Build configuration list for PBXNativeTarget "GTDMenubarSync" */;
+		buildPhases = (
+			B002 /* Sources */,
+			B001 /* Frameworks */,
+			B003 /* Resources */,
+		);
+		buildRules = (
+		);
+		dependencies = (
+		);
+		name = GTDMenubarSync;
+		productName = GTDMenubarSync;
+		productReference = P001 /* GTDMenubarSync.app */;
+		productType = "com.apple.product-type.application";
+	};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+	PRJ1 /* Project object */ = {
+		isa = PBXProject;
+		attributes = {
+			BuildIndependentTargetsInParallel = 1;
+			LastSwiftUpdateCheck = 1600;
+			LastUpgradeCheck = 1600;
+			TargetAttributes = {
+				T001 = {
+					CreatedOnToolsVersion = 16.0;
+				};
+			};
+		};
+		buildConfigurationList = C000 /* Build configuration list for PBXProject "GTDMenubarSync" */;
+		compatibilityVersion = "Xcode 14.0";
+		developmentRegion = en;
+		hasScannedForEncodings = 0;
+		knownRegions = (
+			en,
+			Base,
+		);
+		mainGroup = G000;
+		productRefGroup = G102 /* Products */;
+		projectDirPath = "";
+		projectRoot = "";
+		targets = (
+			T001 /* GTDMenubarSync */,
+		);
+	};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+	B003 /* Resources */ = {
+		isa = PBXResourcesBuildPhase;
+		buildActionMask = 2147483647;
+		files = (
+		);
+		runOnlyForDeploymentPostprocessing = 0;
+	};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+	B002 /* Sources */ = {
+		isa = PBXSourcesBuildPhase;
+		buildActionMask = 2147483647;
+		files = (
+			A001 /* AppState.swift in Sources */,
+			A002 /* GTDMenubarSyncApp.swift in Sources */,
+			A003 /* SyncModels.swift in Sources */,
+			A004 /* TaskModels.swift in Sources */,
+			A005 /* AppLogger.swift in Sources */,
+			A006 /* LocalStore.swift in Sources */,
+			A007 /* PermissionManager.swift in Sources */,
+			A008 /* RemindersStore.swift in Sources */,
+			A009 /* ServerAPI.swift in Sources */,
+			A010 /* SyncEngine.swift in Sources */,
+			A011 /* SyncMapper.swift in Sources */,
+			A012 /* MenuBarRootView.swift in Sources */,
+			A013 /* StatusSectionView.swift in Sources */,
+		);
+		runOnlyForDeploymentPostprocessing = 0;
+	};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+	D001 /* Debug */ = {
+		isa = XCBuildConfiguration;
+		buildSettings = {
+			ALWAYS_SEARCH_USER_PATHS = NO;
+			CLANG_ENABLE_MODULES = YES;
+			CLANG_ENABLE_OBJC_ARC = YES;
+			CODE_SIGN_ENTITLEMENTS = App/GTDMenubarSync.entitlements;
+			CODE_SIGN_STYLE = Automatic;
+			CURRENT_PROJECT_VERSION = 1;
+			DEVELOPMENT_TEAM = "";
+			ENABLE_APP_SANDBOX = YES;
+			ENABLE_HARDENED_RUNTIME = YES;
+			GENERATE_INFOPLIST_FILE = NO;
+			INFOPLIST_FILE = App/Info.plist;
+			MACOSX_DEPLOYMENT_TARGET = 14.0;
+			MARKETING_VERSION = 1.0;
+			PRODUCT_BUNDLE_IDENTIFIER = ai.gtd.menubarsync;
+			PRODUCT_NAME = "$(TARGET_NAME)";
+			SDKROOT = macosx;
+			SWIFT_EMIT_LOC_STRINGS = YES;
+			SWIFT_VERSION = 5.0;
+		};
+		name = Debug;
+	};
+	D002 /* Release */ = {
+		isa = XCBuildConfiguration;
+		buildSettings = {
+			ALWAYS_SEARCH_USER_PATHS = NO;
+			CLANG_ENABLE_MODULES = YES;
+			CLANG_ENABLE_OBJC_ARC = YES;
+			CODE_SIGN_ENTITLEMENTS = App/GTDMenubarSync.entitlements;
+			CODE_SIGN_STYLE = Automatic;
+			CURRENT_PROJECT_VERSION = 1;
+			DEVELOPMENT_TEAM = "";
+			ENABLE_APP_SANDBOX = YES;
+			ENABLE_HARDENED_RUNTIME = YES;
+			GENERATE_INFOPLIST_FILE = NO;
+			INFOPLIST_FILE = App/Info.plist;
+			MACOSX_DEPLOYMENT_TARGET = 14.0;
+			MARKETING_VERSION = 1.0;
+			PRODUCT_BUNDLE_IDENTIFIER = ai.gtd.menubarsync;
+			PRODUCT_NAME = "$(TARGET_NAME)";
+			SDKROOT = macosx;
+			SWIFT_EMIT_LOC_STRINGS = YES;
+			SWIFT_VERSION = 5.0;
+		};
+		name = Release;
+	};
+	D101 /* Debug */ = {
+		isa = XCBuildConfiguration;
+		buildSettings = {
+			CODE_SIGN_ENTITLEMENTS = App/GTDMenubarSync.entitlements;
+			CODE_SIGN_STYLE = Automatic;
+			DEVELOPMENT_TEAM = "";
+			ENABLE_APP_SANDBOX = YES;
+			ENABLE_HARDENED_RUNTIME = YES;
+			GENERATE_INFOPLIST_FILE = NO;
+			INFOPLIST_FILE = App/Info.plist;
+			MACOSX_DEPLOYMENT_TARGET = 14.0;
+			PRODUCT_BUNDLE_IDENTIFIER = ai.gtd.menubarsync;
+			PRODUCT_NAME = "$(TARGET_NAME)";
+			SDKROOT = macosx;
+			SWIFT_VERSION = 5.0;
+		};
+		name = Debug;
+	};
+	D102 /* Release */ = {
+		isa = XCBuildConfiguration;
+		buildSettings = {
+			CODE_SIGN_ENTITLEMENTS = App/GTDMenubarSync.entitlements;
+			CODE_SIGN_STYLE = Automatic;
+			DEVELOPMENT_TEAM = "";
+			ENABLE_APP_SANDBOX = YES;
+			ENABLE_HARDENED_RUNTIME = YES;
+			GENERATE_INFOPLIST_FILE = NO;
+			INFOPLIST_FILE = App/Info.plist;
+			MACOSX_DEPLOYMENT_TARGET = 14.0;
+			PRODUCT_BUNDLE_IDENTIFIER = ai.gtd.menubarsync;
+			PRODUCT_NAME = "$(TARGET_NAME)";
+			SDKROOT = macosx;
+			SWIFT_VERSION = 5.0;
+		};
+		name = Release;
+	};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+	C000 /* Build configuration list for PBXProject "GTDMenubarSync" */ = {
+		isa = XCConfigurationList;
+		buildConfigurations = (
+			D001 /* Debug */,
+			D002 /* Release */,
+		);
+		defaultConfigurationIsVisible = 0;
+		defaultConfigurationName = Release;
+	};
+	C001 /* Build configuration list for PBXNativeTarget "GTDMenubarSync" */ = {
+		isa = XCConfigurationList;
+		buildConfigurations = (
+			D101 /* Debug */,
+			D102 /* Release */,
+		);
+		defaultConfigurationIsVisible = 0;
+		defaultConfigurationName = Release;
+	};
+/* End XCConfigurationList section */
+	};
+	rootObject = PRJ1 /* Project object */;
+}
