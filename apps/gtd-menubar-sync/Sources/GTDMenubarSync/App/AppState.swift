@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import ServiceManagement
 
 @MainActor
 final class AppState: ObservableObject {
@@ -91,10 +92,18 @@ final class AppState: ObservableObject {
 
     func setLaunchAtLoginEnabled(_ enabled: Bool) {
         do {
-            if enabled {
-                try addLoginItem()
+            if #available(macOS 13.0, *) {
+                if enabled {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
             } else {
-                try removeLoginItem()
+                if enabled {
+                    try addLoginItemLegacy()
+                } else {
+                    try removeLoginItemLegacy()
+                }
             }
             launchAtLoginEnabled = queryLaunchAtLoginEnabled()
             logger.info("launchAtLogin toggled=\(launchAtLoginEnabled)")
@@ -158,17 +167,21 @@ final class AppState: ObservableObject {
     }
 
     private func queryLaunchAtLoginEnabled() -> Bool {
+        if #available(macOS 13.0, *) {
+            let status = SMAppService.mainApp.status
+            return status == .enabled || status == .requiresApproval
+        }
         let script = "tell application \"System Events\" to return exists login item \"GTDMenubarSync\""
         return (try? runAppleScript(script).trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "true") ?? false
     }
 
-    private func addLoginItem() throws {
+    private func addLoginItemLegacy() throws {
         let appPath = (Bundle.main.bundleURL.path as NSString).expandingTildeInPath
         let script = "tell application \"System Events\"\nif not (exists login item \"GTDMenubarSync\") then\nmake login item at end with properties {path:POSIX file \"\(appPath)\" as text, hidden:false, name:\"GTDMenubarSync\"}\nend if\nend tell"
         _ = try runAppleScript(script)
     }
 
-    private func removeLoginItem() throws {
+    private func removeLoginItemLegacy() throws {
         let script = "tell application \"System Events\"\nif exists login item \"GTDMenubarSync\" then\ndelete login item \"GTDMenubarSync\"\nend if\nend tell"
         _ = try runAppleScript(script)
     }

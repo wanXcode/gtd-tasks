@@ -33,6 +33,7 @@ actor RemindersStore {
     func listCalendars() async throws -> [String] {
         let status = await permissionManager.currentStatus()
         guard status == .authorized else { throw RemindersStoreError.permissionNotGranted }
+        refreshIfNeeded()
         return store.calendars(for: .reminder).map(\.title)
     }
 
@@ -76,6 +77,7 @@ actor RemindersStore {
     }
 
     private func fetchReminder(_ id: String) throws -> EKReminder {
+        refreshIfNeeded()
         guard let reminder = store.calendarItem(withIdentifier: id) as? EKReminder else {
             throw RemindersStoreError.reminderNotFound(id)
         }
@@ -83,10 +85,33 @@ actor RemindersStore {
     }
 
     private func resolveCalendar(named title: String) throws -> EKCalendar {
-        if let calendar = store.calendars(for: .reminder).first(where: { $0.title == title }) {
-            return calendar
+        refreshIfNeeded()
+        let wanted = normalize(title)
+        let calendars = store.calendars(for: .reminder)
+        if let exact = calendars.first(where: { normalize($0.title) == wanted }) {
+            return exact
+        }
+        refreshIfNeeded(force: true)
+        let refreshed = store.calendars(for: .reminder)
+        if let exact = refreshed.first(where: { normalize($0.title) == wanted }) {
+            return exact
         }
         throw RemindersStoreError.calendarUnavailable(title)
+    }
+
+    private func normalize(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "\u{00A0}", with: " ")
+    }
+
+    private func refreshIfNeeded(force: Bool = false) {
+        if force {
+            _ = store.refreshSourcesIfNecessary()
+            return
+        }
+        if store.calendars(for: .reminder).isEmpty {
+            _ = store.refreshSourcesIfNecessary()
+        }
     }
 
     private func parseDueDate(_ raw: String?) -> DateComponents? {
