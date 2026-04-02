@@ -26,3 +26,11 @@ inbox.md
 done.md
 weekly/review-latest.md
 matrix/*.md
+
+# runtime/generated artifacts
+data.db
+server/data.db
+data/*.backup.*.json
+data/*.pre-online-sync.*.json
+sync/*.bak.*
+mac/reminders-bridge.placeholder.bak
