@@ -21,6 +21,7 @@
 	A012 /* MenuBarRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F012 /* MenuBarRootView.swift */; };
 	A013 /* StatusSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F013 /* StatusSectionView.swift */; };
 	A014 /* PermissionRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F014 /* PermissionRequestView.swift */; };
+	A015 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = F015 /* AppIcon.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 	I001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 	E001 /* GTDMenubarSync.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GTDMenubarSync.entitlements; sourceTree = "<group>"; };
 	F014 /* PermissionRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionRequestView.swift; sourceTree = "<group>"; };
+	F015 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Resources/AppIcon.icns; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,6 +50,7 @@
 		isa = PBXFrameworksBuildPhase;
 		buildActionMask = 2147483647;
 		files = (
+			A015 /* AppIcon.icns in Resources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};
@@ -60,6 +63,7 @@
 			G100 /* App */,
 			G101 /* Sources */,
 			G102 /* Products */,
+			F015 /* AppIcon.icns */,
 		);
 		sourceTree = "<group>";
 	};
@@ -191,6 +195,7 @@
 		isa = PBXResourcesBuildPhase;
 		buildActionMask = 2147483647;
 		files = (
+			A015 /* AppIcon.icns in Resources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};

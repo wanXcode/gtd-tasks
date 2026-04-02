@@ -1,7 +1,25 @@
 import Foundation
 
+final class InsecureTLSDelegate: NSObject, URLSessionDelegate {
+    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        if let trust = challenge.protectionSpace.serverTrust {
+            completionHandler(.useCredential, URLCredential(trust: trust))
+        } else {
+            completionHandler(.performDefaultHandling, nil)
+        }
+    }
+}
+
 struct ServerAPI {
     var baseURL: URL = URL(string: ProcessInfo.processInfo.environment["GTD_API_BASE_URL"] ?? "https://gtd.5666.net")!
+    private let delegate = InsecureTLSDelegate()
+
+    private func session() -> URLSession {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 60
+        config.timeoutIntervalForResource = 60
+        return URLSession(configuration: config, delegate: delegate, delegateQueue: nil)
+    }
 
     private func request(path: String, method: String = "GET", body: Data? = nil) async throws -> (Data, HTTPURLResponse) {
         let url = URL(string: path, relativeTo: baseURL)!
@@ -13,7 +31,7 @@ struct ServerAPI {
             request.httpBody = body
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session().data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw NSError(domain: "ServerAPI", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
         }
