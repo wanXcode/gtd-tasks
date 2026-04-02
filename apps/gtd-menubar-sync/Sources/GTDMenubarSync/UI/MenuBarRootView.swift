@@ -61,6 +61,11 @@ struct MenuBarRootView: View {
                 set: { appState.setAutoSyncEnabled($0) }
             ))
 
+            Toggle("开机启动", isOn: Binding(
+                get: { appState.launchAtLoginEnabled },
+                set: { appState.setLaunchAtLoginEnabled($0) }
+            ))
+
             Divider()
 
             HStack {
@@ -71,6 +76,15 @@ struct MenuBarRootView: View {
 
                 Button("请求权限") {
                     Task { await appState.requestPermission() }
+                }
+            }
+
+            HStack {
+                Button("打开状态目录") {
+                    appState.openStatusDirectory()
+                }
+                Button("打开迁移文档") {
+                    appState.openMigrationDoc()
                 }
             }
 

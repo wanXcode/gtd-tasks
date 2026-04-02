@@ -14,6 +14,7 @@ final class AppState: ObservableObject {
     @Published var stats: SyncStats = .empty
     @Published var autoSyncEnabled = true
     @Published var shouldShowPermissionWindow = false
+    @Published var launchAtLoginEnabled = false
 
     private let permissionManager = PermissionManager()
     private let localStore = LocalStore()
@@ -47,6 +48,7 @@ final class AppState: ObservableObject {
             self.status = snapshot.status
         }
         self.stats = localStore.loadStats() ?? .empty
+        self.launchAtLoginEnabled = queryLaunchAtLoginEnabled()
         startAutoSyncLoopIfNeeded()
         shouldShowPermissionWindow = permissionStatus != .authorized
         logger.info("bootstrap finished; running first sync without auto-requesting permission")
@@ -87,6 +89,36 @@ final class AppState: ObservableObject {
         }
     }
 
+    func setLaunchAtLoginEnabled(_ enabled: Bool) {
+        do {
+            if enabled {
+                try addLoginItem()
+            } else {
+                try removeLoginItem()
+            }
+            launchAtLoginEnabled = queryLaunchAtLoginEnabled()
+            logger.info("launchAtLogin toggled=\(launchAtLoginEnabled)")
+        } catch {
+            lastErrorSummary = "修改开机启动失败：\(error.localizedDescription)"
+            logger.error("setLaunchAtLoginEnabled failed: \(error.localizedDescription)")
+        }
+    }
+
+    func openStatusDirectory() {
+        NSWorkspace.shared.open(localStore.baseDirectory)
+    }
+
+    func openMigrationDoc() {
+        let repoRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let doc = repoRoot.appendingPathComponent("docs/macos-sync-migration.md")
+        NSWorkspace.shared.open(doc)
+    }
+
     func runSyncNow() async {
         guard !isSyncing else {
             logger.info("runSyncNow skipped because already syncing")
@@ -123,5 +155,39 @@ final class AppState: ObservableObject {
                 await self.runSyncNow()
             }
         }
+    }
+
+    private func queryLaunchAtLoginEnabled() -> Bool {
+        let script = "tell application \"System Events\" to return exists login item \"GTDMenubarSync\""
+        return (try? runAppleScript(script).trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "true") ?? false
+    }
+
+    private func addLoginItem() throws {
+        let appPath = (Bundle.main.bundleURL.path as NSString).expandingTildeInPath
+        let script = "tell application \"System Events\"\nif not (exists login item \"GTDMenubarSync\") then\nmake login item at end with properties {path:POSIX file \"\(appPath)\" as text, hidden:false, name:\"GTDMenubarSync\"}\nend if\nend tell"
+        _ = try runAppleScript(script)
+    }
+
+    private func removeLoginItem() throws {
+        let script = "tell application \"System Events\"\nif exists login item \"GTDMenubarSync\" then\ndelete login item \"GTDMenubarSync\"\nend if\nend tell"
+        _ = try runAppleScript(script)
+    }
+
+    private func runAppleScript(_ source: String) throws -> String {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = ["-e", source]
+        let out = Pipe()
+        let err = Pipe()
+        process.standardOutput = out
+        process.standardError = err
+        try process.run()
+        process.waitUntilExit()
+        let stdout = String(data: out.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+        let stderr = String(data: err.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+        if process.terminationStatus != 0 {
+            throw NSError(domain: "AppleScript", code: Int(process.terminationStatus), userInfo: [NSLocalizedDescriptionKey: stderr.isEmpty ? stdout : stderr])
+        }
+        return stdout
     }
 }

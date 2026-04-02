@@ -14,7 +14,7 @@ struct LocalStore {
         return decoder
     }()
 
-    private var baseDirectory: URL {
+    var baseDirectory: URL {
         let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let dir = appSupport.appendingPathComponent("GTDMenubarSync", isDirectory: true)
         try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
