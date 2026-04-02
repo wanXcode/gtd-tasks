@@ -117,17 +117,6 @@ final class AppState: ObservableObject {
         NSWorkspace.shared.open(localStore.baseDirectory)
     }
 
-    func openMigrationDoc() {
-        let repoRoot = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let doc = repoRoot.appendingPathComponent("docs/macos-sync-migration.md")
-        NSWorkspace.shared.open(doc)
-    }
-
     func runSyncNow() async {
         guard !isSyncing else {
             logger.info("runSyncNow skipped because already syncing")

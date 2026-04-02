@@ -77,14 +77,9 @@ struct MenuBarRootView: View {
                 Button("请求权限") {
                     Task { await appState.requestPermission() }
                 }
-            }
 
-            HStack {
                 Button("打开状态目录") {
                     appState.openStatusDirectory()
-                }
-                Button("打开迁移文档") {
-                    appState.openMigrationDoc()
                 }
             }
 
