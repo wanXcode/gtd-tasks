@@ -75,3 +75,11 @@ struct SyncResultSnapshot: Codable {
     let lastSuccessAt: Date?
     let lastErrorSummary: String?
 }
+
+struct SyncStats: Codable {
+    let lastKnownChangeID: Int
+    let mappingCount: Int
+    let lastRunAt: Date?
+
+    static let empty = SyncStats(lastKnownChangeID: 0, mappingCount: 0, lastRunAt: nil)
+}

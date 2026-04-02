@@ -26,8 +26,26 @@ struct MenuBarRootView: View {
                 symbol: "network"
             )
 
+            StatusSectionView(
+                title: "最后 change 游标",
+                value: String(appState.stats.lastKnownChangeID),
+                symbol: "point.topleft.down.curvedto.point.bottomright.up"
+            )
+
+            StatusSectionView(
+                title: "本地 mapping 数量",
+                value: String(appState.stats.mappingCount),
+                symbol: "link"
+            )
+
             if let lastSuccessAt = appState.lastSuccessAt {
                 Text("上次成功同步：\(lastSuccessAt.formatted(date: .numeric, time: .standard))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let lastRunAt = appState.stats.lastRunAt {
+                Text("最近一次运行：\(lastRunAt.formatted(date: .numeric, time: .standard))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -37,6 +55,11 @@ struct MenuBarRootView: View {
                     .font(.caption)
                     .foregroundStyle(.orange)
             }
+
+            Toggle("自动同步（60 秒）", isOn: Binding(
+                get: { appState.autoSyncEnabled },
+                set: { appState.setAutoSyncEnabled($0) }
+            ))
 
             Divider()
 

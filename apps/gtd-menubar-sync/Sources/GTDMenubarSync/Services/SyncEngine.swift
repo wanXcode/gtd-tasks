@@ -9,9 +9,11 @@ struct SyncEngine {
     let mapper = SyncMapper()
 
     func runOnce() async -> SyncResultSnapshot {
+        let startedAt = Date()
         let permission = await permissionManager.currentStatus()
         guard permission == .authorized else {
             logger.error("sync skipped: reminders permission not authorized")
+            localStore.saveStats(SyncStats(lastKnownChangeID: localStore.loadClientState()?.lastChangeID ?? 0, mappingCount: localStore.loadMappings().count, lastRunAt: startedAt))
             return SyncResultSnapshot(
                 status: .permissionRequired,
                 permissionStatus: permission,
@@ -24,6 +26,7 @@ struct SyncEngine {
         let serverHealth = await serverAPI.healthcheck()
         guard serverHealth == .online else {
             logger.error("sync skipped: server offline or degraded")
+            localStore.saveStats(SyncStats(lastKnownChangeID: localStore.loadClientState()?.lastChangeID ?? 0, mappingCount: localStore.loadMappings().count, lastRunAt: startedAt))
             return SyncResultSnapshot(
                 status: .serverError,
                 permissionStatus: permission,
@@ -106,6 +109,7 @@ struct SyncEngine {
                     lastSyncAt: successDate
                 )
             )
+            localStore.saveStats(SyncStats(lastKnownChangeID: ackUpto, mappingCount: localMappings.count, lastRunAt: startedAt))
 
             return SyncResultSnapshot(
                 status: firstError == nil ? .healthy : .partialFailure,
@@ -116,6 +120,7 @@ struct SyncEngine {
             )
         } catch {
             logger.error("sync failed: \(error.localizedDescription)")
+            localStore.saveStats(SyncStats(lastKnownChangeID: localStore.loadClientState()?.lastChangeID ?? 0, mappingCount: localStore.loadMappings().count, lastRunAt: startedAt))
             return SyncResultSnapshot(
                 status: .failed,
                 permissionStatus: permission,
