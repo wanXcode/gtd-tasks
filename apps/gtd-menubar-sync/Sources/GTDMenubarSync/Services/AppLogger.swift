@@ -15,4 +15,8 @@ struct AppLogger {
     func error(_ message: String) {
         logger.error("\(message, privacy: .public)")
     }
+
+    func fault(_ message: String) {
+        logger.fault("\(message, privacy: .public)")
+    }
 }

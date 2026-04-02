@@ -20,6 +20,7 @@
 	A011 /* SyncMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F011 /* SyncMapper.swift */; };
 	A012 /* MenuBarRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F012 /* MenuBarRootView.swift */; };
 	A013 /* StatusSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F013 /* StatusSectionView.swift */; };
+	A014 /* PermissionRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F014 /* PermissionRequestView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +40,7 @@
 	F013 /* StatusSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusSectionView.swift; sourceTree = "<group>"; };
 	I001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 	E001 /* GTDMenubarSync.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GTDMenubarSync.entitlements; sourceTree = "<group>"; };
+	F014 /* PermissionRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionRequestView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -126,6 +128,7 @@
 		children = (
 			F012 /* MenuBarRootView.swift */,
 			F013 /* StatusSectionView.swift */,
+			F014 /* PermissionRequestView.swift */,
 		);
 		path = UI;
 		sourceTree = "<group>";
@@ -211,6 +214,7 @@
 			A011 /* SyncMapper.swift in Sources */,
 			A012 /* MenuBarRootView.swift in Sources */,
 			A013 /* StatusSectionView.swift in Sources */,
+			A014 /* PermissionRequestView.swift in Sources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};
@@ -227,7 +231,7 @@
 			CODE_SIGN_STYLE = Automatic;
 			CURRENT_PROJECT_VERSION = 1;
 			DEVELOPMENT_TEAM = "";
-			ENABLE_APP_SANDBOX = YES;
+			ENABLE_APP_SANDBOX = NO;
 			ENABLE_HARDENED_RUNTIME = YES;
 			GENERATE_INFOPLIST_FILE = NO;
 			INFOPLIST_FILE = App/Info.plist;
@@ -251,7 +255,7 @@
 			CODE_SIGN_STYLE = Automatic;
 			CURRENT_PROJECT_VERSION = 1;
 			DEVELOPMENT_TEAM = "";
-			ENABLE_APP_SANDBOX = YES;
+			ENABLE_APP_SANDBOX = NO;
 			ENABLE_HARDENED_RUNTIME = YES;
 			GENERATE_INFOPLIST_FILE = NO;
 			INFOPLIST_FILE = App/Info.plist;
@@ -271,7 +275,7 @@
 			CODE_SIGN_ENTITLEMENTS = App/GTDMenubarSync.entitlements;
 			CODE_SIGN_STYLE = Automatic;
 			DEVELOPMENT_TEAM = "";
-			ENABLE_APP_SANDBOX = YES;
+			ENABLE_APP_SANDBOX = NO;
 			ENABLE_HARDENED_RUNTIME = YES;
 			GENERATE_INFOPLIST_FILE = NO;
 			INFOPLIST_FILE = App/Info.plist;
@@ -289,7 +293,7 @@
 			CODE_SIGN_ENTITLEMENTS = App/GTDMenubarSync.entitlements;
 			CODE_SIGN_STYLE = Automatic;
 			DEVELOPMENT_TEAM = "";
-			ENABLE_APP_SANDBOX = YES;
+			ENABLE_APP_SANDBOX = NO;
 			ENABLE_HARDENED_RUNTIME = YES;
 			GENERATE_INFOPLIST_FILE = NO;
 			INFOPLIST_FILE = App/Info.plist;

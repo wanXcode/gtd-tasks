@@ -25,6 +25,8 @@ let service = EventKitService()
 switch action {
 case "check-permission":
     JsonIO.printJSON(service.checkPermission())
+case "request-permission":
+    JsonIO.printJSON(service.requestPermission())
 case "list-calendars":
     JsonIO.printJSON(service.listCalendars())
 case "preflight":

@@ -24,5 +24,9 @@
 	<string></string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>GTD Menubar Sync 需要访问提醒事项，以便将线上 GTD 任务同步到本地 Apple Reminders。</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>GTD Menubar Sync 需要完整访问提醒事项，以便创建、更新、完成和删除与 GTD 任务对应的本地提醒事项。</string>
 </dict>
 </plist>

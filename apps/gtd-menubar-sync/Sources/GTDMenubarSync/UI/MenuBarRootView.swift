@@ -74,6 +74,10 @@ struct MenuBarRootView: View {
                 }
             }
 
+            Text("提示：请在点击“请求权限”后观察系统弹窗。")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
             Divider()
 
             Button("退出") {

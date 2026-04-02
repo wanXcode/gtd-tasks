@@ -1,0 +1,300 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.RemindersBridge-arm64-apple-macosx26.0-release.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/sources",
+      "importPath" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/EventKitService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/JsonIO.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/Models.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/main.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "RemindersBridge",
+      "moduleOutputPath" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/Modules/RemindersBridge.swiftmodule",
+      "objects" : [
+        "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/EventKitService.swift.o",
+        "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/JsonIO.swift.o",
+        "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/Models.swift.o",
+        "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/main.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx13.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "8",
+        "-serialize-diagnostics",
+        "-O",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "RemindersBridge_main",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "eventkitbridge"
+      ],
+      "outputFileMapPath" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/EventKitService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/JsonIO.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/Models.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/main.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/Modules/RemindersBridge.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/EventKitService.swift",
+        "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/JsonIO.swift",
+        "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/Models.swift",
+        "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/main.swift"
+      ],
+      "tempsPath" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build",
+      "wholeModuleOptimization" : true
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "RemindersBridge" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "RemindersBridge",
+      "-package-name",
+      "eventkitbridge",
+      "-c",
+      "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/EventKitService.swift",
+      "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/JsonIO.swift",
+      "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/Models.swift",
+      "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/main.swift",
+      "-I",
+      "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/Modules",
+      "-target",
+      "arm64-apple-macosx13.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "8",
+      "-serialize-diagnostics",
+      "-O",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "RemindersBridge_main",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "eventkitbridge",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "RemindersBridge" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/EventKitService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/JsonIO.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/Models.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/Sources/RemindersBridge/main.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/sources"
+    },
+    "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/reminders-bridge.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/EventKitService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/JsonIO.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/Models.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/RemindersBridge.build/main.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/reminders-bridge.product/Objects.LinkFileList"
+    },
+    "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/wan/workspace/gtd-tasks/mac/EventKitBridge/.build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}

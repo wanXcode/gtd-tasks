@@ -57,6 +57,31 @@ final class EventKitService {
         return BridgeSuccess(action: "check-permission", reminder_id: nil, calendars: nil, permission: permission, message: nil, preflight: nil)
     }
 
+    func requestPermission() -> BridgeSuccess {
+        let semaphore = DispatchSemaphore(value: 0)
+        var permission = currentPermission()
+        if permission == "authorized" {
+            return BridgeSuccess(action: "request-permission", reminder_id: nil, calendars: nil, permission: permission, message: "already_authorized", preflight: nil)
+        }
+
+        if #available(macOS 14.0, *) {
+            store.requestFullAccessToReminders { granted, _ in
+                permission = granted ? "authorized" : self.currentPermission()
+                semaphore.signal()
+            }
+        } else {
+            store.requestAccess(to: .reminder) { granted, _ in
+                permission = granted ? "authorized" : self.currentPermission()
+                semaphore.signal()
+            }
+        }
+
+        _ = semaphore.wait(timeout: .now() + 15)
+        permission = currentPermission()
+        let message = permission == "authorized" ? "granted" : "not_granted"
+        return BridgeSuccess(action: "request-permission", reminder_id: nil, calendars: nil, permission: permission, message: message, preflight: nil)
+    }
+
     func preflight(_ payload: ReminderPayload?) -> BridgeSuccess {
         let calendars = store.calendars(for: .reminder)
         let requested = resolveCalendar(listName: payload?.list_name, calendarId: payload?.calendar_id)
