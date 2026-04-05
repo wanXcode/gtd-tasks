@@ -5,6 +5,7 @@
 GTD 系统统一使用：**Asia/Shanghai（UTC+8，北京时间）**
 
 这条规则适用于：
+- `scripts/gtd_reminder_digest.py` 的 morning / evening 模式
 - today.md 的“今日”语义
 - 手动查看“待办清单”时的分类
 - 早上 10 点提醒

@@ -141,8 +141,10 @@
 - 每条任务优先展示标题；确有必要时再补状态、bucket 或完成时间
 - 分组标题里的数量必须和下面实际列出的条目数一致；总数也必须和全部分组数量一致
 - 总结句优先说人话，不要机械复述 `future/q2`；更自然地表达成“这些任务目前还没排进今天，主要放在未来清单里”
-- 查看“全部清单”时，优先使用 `python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_executor.py list --status open --limit 100 --verbose` 或等价 API 查询
-- **对 executor 返回的 `--verbose` 明细，必须由你二次整理成人话分类列表后再回复用户；禁止把原始技术字段表格（状态/分类/时间桶/象限/标题）直接贴给用户**
+- 用户要“待办清单 / 发我待办清单 / 当前待办 / 今日清单 / 明日清单 / 未来清单”时，优先使用统一手动查询入口：`/root/.openclaw/workspace/gtd-tasks/scripts/gtd_manual_query.sh morning --json`；晚间复盘语境可改用 `evening --json`
+- 这个手动查询入口本质上是对 `scripts/gtd_reminder_digest.py` 的薄包装；定时提醒与手动查询必须尽量复用同一份 digest text/json 输出，不要再各自读 `today.md`、`data/tasks.json` 或 readonly-cache 拼另一套摘要
+- 查看“全部清单”时，如需更细筛选，再使用 `python3 /root/.openclaw/workspace/gtd-tasks/scripts/aigtd_executor.py list --status open --limit 100 --verbose` 或等价 API 查询
+- **对脚本/ executor 返回的结构化结果，必须由你二次整理成人话分类列表后再回复用户；禁止把原始技术字段表格（状态/分类/时间桶/象限/标题）直接贴给用户**
 - **禁止输出类似“全部落在 future / q2，需要处理哪条？”这类技术总结；如果用户问的是全部清单，只总结分类分布和是否已安排到今天即可**
 
 ## 事务整理原则

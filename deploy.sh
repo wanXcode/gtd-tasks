@@ -49,26 +49,12 @@ EXISTING_JOB=$(openclaw cron list --json 2>/dev/null | grep -o '"name":"gtd-dail
 if [ -n "$EXISTING_JOB" ]; then
     echo "⏰ 发现已有定时任务，跳过创建"
 else
-    echo "⏰ 创建每日提醒定时任务（晚8:30）..."
+    echo "⏰ 创建每日提醒定时任务（晚8:30，API-first digest 链）..."
     openclaw cron add \
         --name "gtd-daily-checkin" \
         --cron "30 20 * * *" \
         --tz "Asia/Shanghai" \
-        --message "你是GTD任务管理助手。现在是晚上8:30，请：
-
-1. 先读取 ${GTD_DIR}/today.md 和 matrix/q1-urgent-important.md、matrix/q2-important-not-urgent.md
-2. 整理当前待办清单（只显示未完成的）
-3. 发送给用户的格式：
-
-哥哥～晚上8点半了 🌙
-
-【当前待办清单】
-（列出今日待办 + Q1 + Q2 的未完成项）
-
-请告诉我今天完成情况：
-1. 完成了哪些？
-2. 有什么卡点？
-3. 明天计划做什么？" \
+        --message "请直接读取并严格遵循 /root/.openclaw/workspace/gtd-tasks/prompts/gtd-daily-checkin.md。若未绑定固定发送目标，请先人工补齐 message 发送目标；不要再直接读取 today.md / data/tasks.json 来拼提醒正文。" \
         --session isolated \
         2>/dev/null || echo "⚠️  定时任务创建失败，可能需要手动配置"
 fi
@@ -78,12 +64,13 @@ echo "✅ 部署完成！"
 echo ""
 echo "📁 工作目录: ${GTD_DIR}"
 echo "📋 使用方法:"
-echo "   - 查看今日待办: cat ${GTD_DIR}/today.md"
-echo "   - 查看Q1紧急重要: cat ${GTD_DIR}/matrix/q1-urgent-important.md"
-echo "   - 查看Q2重要不紧急: cat ${GTD_DIR}/matrix/q2-important-not-urgent.md"
+echo "   - 手动查看晨间摘要: ${GTD_DIR}/scripts/gtd_manual_query.sh morning --text"
+echo "   - 手动查看晚间摘要: ${GTD_DIR}/scripts/gtd_manual_query.sh evening --text"
+echo "   - 如需看展示视图: cat ${GTD_DIR}/today.md"
 echo ""
 echo "💡 提示:"
-echo "   - 每晚8:30会自动提醒回顾当日完成情况"
+echo "   - 正式提醒与手动待办查询，建议统一走 API-first digest 链"
+echo "   - today.md / matrix/* 继续保留，但主要是展示层，不再作为提醒正文真源"
 echo "   - 直接发消息给我可以添加新任务"
 echo "   - 修改文件后记得 git push 同步到 GitHub"
 echo ""

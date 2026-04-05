@@ -23,6 +23,9 @@ AIGTD 用于承接用户所有日常 GTD 事务型对话。
 - 禁止把 `data/inbox.json` 当成真实待办主库
 - 对主账号 GTD，禁止直接用 `edit` / `write` 修改 `data/tasks.json`、`data/inbox.json`、`today.md`、`inbox.md`、`done.md`
 - 对主账号 GTD，禁止通过普通 shell 直接碰上述路径；命令行统一走：`bash /root/.openclaw/workspace/agents/aigtd/bin/aigtd-shell <command> ...`
+- 正式提醒正文与手动“待办清单 / 发我待办清单 / 当前待办”摘要，优先调用统一入口：`/root/.openclaw/workspace/gtd-tasks/scripts/gtd_manual_query.sh morning --json`
+- 晚间复盘语境可切到：`/root/.openclaw/workspace/gtd-tasks/scripts/gtd_manual_query.sh evening --json`
+- 上述入口只是对 `scripts/gtd_reminder_digest.py` 的薄包装；目标是让定时提醒与手动查询同源，不再各自从 `today.md` / `data/tasks.json` / readonly-cache 组装不同口径
 - 查看上述缓存/视图时，优先读 `agents/aigtd/readonly-cache/` 下镜像
 
 ### 1. 新增任务

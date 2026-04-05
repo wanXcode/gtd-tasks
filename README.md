@@ -41,6 +41,8 @@
 ## 数据原则
 
 - GTD 的唯一事实源是当前配置的主后端（主账号现已收敛为 API-first）；本地 `data/tasks.json` 仅作为运行期 cache
+- 正式提醒正文与手动“待办清单 / 发我待办清单 / 当前待办”摘要，优先直接从 API open tasks 生成，不再依赖 `today.md` / `data/tasks.json` / readonly-cache 作为提醒输入
+- 定时提醒与手动查询默认同源：定时提醒直接走 `scripts/gtd_reminder_digest.py`，手动查询走它的薄包装 `scripts/gtd_manual_query.sh`
 - Markdown 文件全部由脚本自动生成，属于本地运行视图
 - `data/tasks.json`、`today.md`、`inbox.md`、`done.md`、`weekly/review-latest.md`、`matrix/*.md` 现已视为本地运行产物，不再纳入 Git 版本管理
 - “今天 / 明天 / 下周 / 未来” 等时间判断固定按北京时间
@@ -206,7 +208,46 @@ python3 scripts/render_views.py
 1. 有新事项，先用 `nlp_capture.py` preview/apply 收进去
 2. 要批量整理时，用 `task_cli.py list / move / tag / update`
 3. 每次修改后自动 render，直接看 `today.md / done.md / weekly/review-latest.md`
-4. 定时提醒或 AI 对话都只读视图，不直接把 Markdown 当事实源改写
+4. **正式提醒 / 手动“待办清单”查询优先走 API-first digest 链**，不要再把 Markdown 视图当提醒输入真源
+
+## API-first 提醒链（正式版）
+
+从这次改造开始，定时提醒与手动“待办清单”查询建议统一切到同一条 digest 链：
+
+```bash
+python3 scripts/gtd_reminder_digest.py --mode morning
+python3 scripts/gtd_reminder_digest.py --mode evening
+./scripts/gtd_manual_query.sh morning --json
+```
+
+### 这条链路的定位
+
+- 直接读取 `https://gtd.5666.net/api/tasks?status=open`
+- 只按任务真实 `bucket` 组织成：`今日 / 明日 / 未来`
+- 自动附带 `ALCHUSDT` 币价监控
+- 自动产出统一正文骨架（今日 / 明日 / 未来 / 币价监控 / 下一步）
+- 支持两种模式：
+  - `--mode morning`：晨间总览版
+  - `--mode evening`：晚间复盘版
+- 支持 `--json` 输出结构化结果，方便给 agent / prompt / 手动查询复用
+
+### 和旧链路的关系
+
+- `render_views.py` 继续保留，但定位收敛为：**缓存渲染 / 展示层**
+- `today.md / inbox.md / done.md / weekly/*.md / matrix/*.md` 继续保留，但不再作为正式提醒输入
+- 本地 `data/tasks.json` 仍是 API cache，不是提醒正文真源
+- `daily-reminder.sh` 现在只是兼容包装层，默认转到：
+
+```bash
+python3 scripts/gtd_reminder_digest.py --mode evening
+```
+
+### 推荐切换方式
+
+- 早上提醒 prompt / cron：切到 `gtd_reminder_digest.py --mode morning`
+- 晚上提醒 prompt / cron：切到 `gtd_reminder_digest.py --mode evening`
+- 用户手动说“发我待办清单 / 当前待办 / 看看待办清单”时，优先走：`./scripts/gtd_manual_query.sh morning --json`
+- 如果只是终端人工查看正文，也可以直接跑：`./scripts/gtd_manual_query.sh morning --text`
 
 ## AIGTD 运行规则版本管理
 

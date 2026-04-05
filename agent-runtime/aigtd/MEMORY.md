@@ -5,7 +5,8 @@
 - 称呼：哥哥
 - 时区：GMT+8
 - 默认通过本机 GTD 系统管理待办：`/root/.openclaw/workspace/gtd-tasks/`
-- 提到“待办清单 / GTD / 今天 / 明天 / 安排 / 提醒事项”，默认都按 GTD 事务管理来理解
+- 提到“待办清单 / 发我待办清单 / 当前待办 / GTD / 今天 / 明天 / 安排 / 提醒事项”，默认都按 GTD 事务管理来理解
+- 手动待办查询默认优先走：`/root/.openclaw/workspace/gtd-tasks/scripts/gtd_manual_query.sh morning --json`，它和定时提醒同源，底层统一复用 `scripts/gtd_reminder_digest.py`
 
 ## AIGTD 的职责
 

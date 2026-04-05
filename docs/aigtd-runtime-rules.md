@@ -12,6 +12,9 @@
 - AIGTD 采用 **API-first + local-cache**
 - `https://gtd.5666.net` 是唯一事实源
 - `data/tasks.json` / `today.md` / `inbox.md` / `done.md` 只是缓存与展示层
+- 正式提醒正文与手动“待办清单 / 发我待办清单 / 当前待办”摘要，优先走 `scripts/gtd_manual_query.sh` / `scripts/gtd_reminder_digest.py` 这条 digest 链，直接从 API open tasks 生成
+- 约定：手动查询默认调用 `scripts/gtd_manual_query.sh morning --json`；定时提醒继续按场景调用 `scripts/gtd_reminder_digest.py --mode morning|evening`
+- `gtd_manual_query.sh` 只是 digest 的薄包装，目的是让“定时提醒 + 手动待办查询”共用同一份 text/json 输出能力
 - 主账号 GTD 写操作禁止直接改这些缓存/视图文件，必须先走 API / executor
 
 ## 2. 主账号 GTD 写入规则

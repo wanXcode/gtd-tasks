@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, adapted for this repo.
 
+## [Unreleased]
+
+### Added
+- Added `scripts/gtd_reminder_digest.py` as the unified API-first reminder/query entry
+- Added dual reminder modes: `morning` and `evening`
+- Added JSON output support for manual “待办清单” queries and agent reuse
+- Added `scripts/gtd_manual_query.sh` as a thin manual-query wrapper over the digest script
+
+### Changed
+- Switched formal reminder generation away from `today.md` / local cache inputs to direct API open-task reads
+- Kept `render_views.py` in place as a display/cache rendering layer, not the reminder source
+- Updated reminder prompts and AIGTD runtime docs to point manual list queries and scheduled reminders at the same digest chain
+- Turned `daily-reminder.sh` into a compatibility wrapper around the new digest script
+
 ## [v0.2.2] - 2026-03-17
 
 ### Added

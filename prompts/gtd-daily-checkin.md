@@ -4,8 +4,10 @@
 
 当前这是“晚上提醒”场景，因此：
 - 使用统一骨架（今日 / 明日 / 未来 / 币价监控 / 下一步）
-- 按晚间复盘版规则生成内容
+- 运行模式固定为 `evening`
+- 推荐直接调用：`python3 /root/.openclaw/workspace/gtd-tasks/scripts/gtd_reminder_digest.py --mode evening`
 - 与手动查看“待办清单”以及早上提醒保持同一版式
+- 不再把 `today.md` / `data/tasks.json` 当成提醒输入真源
 
 ## 发送要求
 生成正文后，必须使用 `message` 工具发送到 Feishu：
