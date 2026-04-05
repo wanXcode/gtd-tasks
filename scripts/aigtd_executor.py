@@ -189,6 +189,8 @@ def execute_action(action: str, args: argparse.Namespace, *, env: dict[str, str]
         cmd += ['add', args.title, '--bucket', args.bucket, '--quadrant', args.quadrant]
         if args.note:
             cmd += ['--note', args.note]
+        if getattr(args, 'due_date', None):
+            cmd += ['--due-date', args.due_date]
         if args.category:
             cmd += ['--category', args.category]
         if args.tags:
@@ -203,6 +205,8 @@ def execute_action(action: str, args: argparse.Namespace, *, env: dict[str, str]
             cmd += ['--quadrant', args.quadrant]
         if args.note is not None:
             cmd += ['--note', args.note]
+        if getattr(args, 'due_date', None) is not None:
+            cmd += ['--due-date', args.due_date]
         if args.category is not None:
             cmd += ['--category', args.category]
         if args.status is not None:
@@ -266,6 +270,7 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument('--bucket', default='future', choices=['today', 'tomorrow', 'future', 'archive'])
     add.add_argument('--quadrant', default='q2', choices=['q1', 'q2', 'q3', 'q4'])
     add.add_argument('--note')
+    add.add_argument('--due-date')
     add.add_argument('--category', choices=['inbox', 'project', 'next_action', 'waiting_for', 'maybe'])
     add.add_argument('--tags', nargs='*')
 
@@ -275,6 +280,7 @@ def build_parser() -> argparse.ArgumentParser:
     update.add_argument('--bucket', choices=['today', 'tomorrow', 'future', 'archive'])
     update.add_argument('--quadrant', choices=['q1', 'q2', 'q3', 'q4'])
     update.add_argument('--note')
+    update.add_argument('--due-date')
     update.add_argument('--category', choices=['inbox', 'project', 'next_action', 'waiting_for', 'maybe'])
     update.add_argument('--status', choices=['open', 'done', 'cancelled', 'archived'])
     update.add_argument('--set-tags', nargs='*')

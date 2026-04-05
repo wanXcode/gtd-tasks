@@ -18,6 +18,7 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument('--bucket', default='future', choices=['today', 'tomorrow', 'future', 'archive'])
     add.add_argument('--quadrant', default='q2', choices=['q1', 'q2', 'q3', 'q4'])
     add.add_argument('--note')
+    add.add_argument('--due-date')
     add.add_argument('--category', choices=['inbox', 'project', 'next_action', 'waiting_for', 'maybe'])
     add.add_argument('--tags', nargs='*')
     return p
@@ -29,6 +30,8 @@ def main() -> None:
     cmd = ['python3', str(EXECUTOR), 'add', args.title, '--bucket', args.bucket, '--quadrant', args.quadrant]
     if args.note:
         cmd += ['--note', args.note]
+    if args.due_date:
+        cmd += ['--due-date', args.due_date]
     if args.category:
         cmd += ['--category', args.category]
     if args.tags:
